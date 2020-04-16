@@ -4,5 +4,7 @@ const { loadModels } = require('../models');
 loadModels();
 
 module.exports = {
-	userRepository: new BaseRepository('User'),
+	tagRepository: new BaseRepository('Tag'),
+	messageRepository: new BaseRepository('Message'),
+	roomRepository: new BaseRepository('Room'),
 };
