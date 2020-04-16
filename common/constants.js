@@ -19,6 +19,13 @@ const constants = {
 	REGEX: {
 		OBJECT_ID: /^(?=[a-f\d]{24}$)(\d+[a-f]|[a-f]+\d)/i,
 	},
+	CHANNEL: {
+		WEB: 'web',
+		FB: 'facebook',
+	},
+	ACTION: {
+		CHAT: 'chat',
+	},
 };
 
 module.exports = Object.freeze(constants);
