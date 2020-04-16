@@ -8,15 +8,16 @@ const helmet = require('helmet');
 const apis = require('./apis');
 const errorHanlder = require('./helpers/error-handler');
 const logger = require('.//services/logger');
+logger.error(new Error('Hi there'));
 
 module.exports = (settings) => {
 	const corsHeaders = settings.cors;
 
 	const app = express();
-	const ENV = process.ENV || 'dev';
+	const env = process.env.ENV || 'dev';
 
 	app.use(helmet());
-	app.use(morgan(ENV));
+	app.use(morgan(env));
 	app.use(compression());
 	app.use(cors(corsHeaders));
 	app.options('*', cors(corsHeaders));
