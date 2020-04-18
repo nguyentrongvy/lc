@@ -15,11 +15,11 @@ const roomSchema = new mongoose.Schema({
 		phone: {
 			type: String,
 			max: 50,
-        },
-        address: {
-            type: String,
-            max: 1000,
-        },
+		},
+		address: {
+			type: String,
+			max: 1000,
+		},
 	},
 	agent: [{
 		type: mongoose.SchemaTypes.ObjectId,
@@ -29,9 +29,9 @@ const roomSchema = new mongoose.Schema({
 		type: mongoose.SchemaTypes.ObjectId,
 		ref: 'Message',
 	},
-	bot: {
+	nlpEngine: {
 		type: mongoose.SchemaTypes.ObjectId,
-		ref: 'Bot',
+		ref: 'NlpEngine',
 		required: true,
 	},
 	channel: {

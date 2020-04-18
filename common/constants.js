@@ -25,6 +25,8 @@ const constants = {
 	},
 	ACTION: {
 		CHAT: 'chat',
+		JOIN_ROOM: 'join_room',
+		LEFT_ROOM: 'left_room',
 	},
 };
 

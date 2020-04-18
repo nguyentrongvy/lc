@@ -11,6 +11,22 @@ class MessageControlelr {
             console.error(error);
         }
     }
+
+    async getMessagesByRoomID(req, res, next) {
+        try {
+            const roomID = req.params.roomID;
+            let { channel, search, page, length } = req.query;
+            const { recordsTotal, messages } = await messageService.getMessagesByRoomID({ channel, search, page, length, roomID });
+            return res.json({
+                success: true,
+                recordsTotal,
+                recordsFiltered: recordsTotal,
+                data: messages,
+            });
+        } catch (error) {
+            console.error(error);
+        }
+    }
 }
 
 module.exports = new MessageControlelr();

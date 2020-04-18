@@ -29,6 +29,31 @@ class MessageService {
             action: (action ? action : Constants.ACTION.CHAT),
         });
     }
+
+    async getMessagesByRoomID({ channel, search, page, length, roomID }) {
+        if (!length) length = 2;
+        if (!page) page = 1;
+        const condition = {
+            room: roomID,
+        }
+        if (search) {
+            condition.content = new RegExp(search, 'gi');
+        }
+        const sortCondition = {
+            createdAt: -1,
+        };
+        const [recordsTotal, messages] = await Promise.all([
+            messageRepository.count(condition),
+            messageRepository.getAll({
+                limit: parseInt(length),
+                page: parseInt(page),
+                where: condition,
+                sort: sortCondition,
+            })
+        ]);
+
+        return { recordsTotal, messages };
+    }
 }
 
 async function createRoom(botUser, nlpEngine) {
