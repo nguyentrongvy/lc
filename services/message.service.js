@@ -1,28 +1,50 @@
 const { messageRepository, roomRepository } = require('../repositories/index');
+const Constants = require('../common/constants');
 
 class MessageService {
-    async sendMessage(data) {
-        const options = {
-            where: {
-                "botUser._id": data.botUser,
-                "bot": data.bot,
-            },
-            options: {
-                upsert: true,
-            },
-            data: {},
-            fields: '_id',
-        };
+    async sendMessage(botUser, nlpEngine, content, channel) {
+        const room = await createRoom(botUser, nlpEngine);
+        const roomID = room._id;
+        const message = await this.create({ botUser, nlpEngine, roomID, content, channel });
 
-        const room = await roomRepository.getOneAndUpdate(options);
-        return await messageRepository.create({
-            botUser: data.botUser,
-            bot: data.bot,
-            room: room._id,
-            content: data.text,
-            channel: data.channel,
+        const unreadMessages = (room.unreadMessages || 0) + 1;
+        return await roomRepository.updateOne({
+            where: {
+                _id: room._id,
+            },
+            data: {
+                unreadMessages: unreadMessages,
+                lastMessage: message._id,
+            },
         });
     }
+
+    async create({ botUser, nlpEngine, roomID, content, channel, action }) {
+        return await messageRepository.create({
+            botUser: botUser,
+            nlpEngine: nlpEngine,
+            room: roomID,
+            content: content,
+            channel: channel,
+            action: (action ? action : Constants.ACTION.CHAT),
+        });
+    }
+}
+
+async function createRoom(botUser, nlpEngine) {
+    const options = {
+        where: {
+            "botUser._id": botUser,
+            "nlpEngine": nlpEngine,
+        },
+        options: {
+            upsert: true,
+        },
+        data: {},
+        fields: '_id',
+    };
+
+    return await roomRepository.getOneAndUpdate(options);
 }
 
 module.exports = new MessageService();
