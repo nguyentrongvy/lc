@@ -8,7 +8,6 @@ const helmet = require('helmet');
 const apis = require('./apis');
 const errorHanlder = require('./helpers/error-handler');
 const logger = require('.//services/logger');
-logger.error(new Error('Hi there'));
 
 module.exports = (settings) => {
 	const corsHeaders = settings.cors;

@@ -12,14 +12,6 @@ const roomSchema = new mongoose.Schema({
 			type: String,
 			max: 1000,
 		},
-		phone: {
-			type: String,
-			max: 50,
-        },
-        address: {
-            type: String,
-            max: 1000,
-        },
 	},
 	agent: [{
 		type: mongoose.SchemaTypes.ObjectId,

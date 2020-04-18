@@ -1,18 +1,16 @@
-const logSlack = require('./slack')(process.env.ENV);
+const env = process.env.ENV || 'dev';
+const logSlack = require('./slack')(env);
 
 exports.error = (err) => {
-	const env = process.env.ENV || 'dev';
 	switch (env) {
-		case 'beta': {
-			logSlack.error(err);
-			return;
-		}
-		case 'prod': {
-
-		}
-		default: {
-			console.error(err);
-			return;
-		}
+	case 'beta': 
+	case 'prod': {
+		logSlack.error(err);
+		return;
+	}
+	default: {
+		console.error(err);
+		return;
+	}
 	}
 };

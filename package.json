@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node bin/index.js",
     "test": "mocha --timeout 10000",
-    "lint": "eslint '**/*.js' --fix"
+    "lint": "eslint . --ext .js --ignore-path .gitignore --fix"
   },
   "eslintConfig": {
     "extends": "airbnb-base",
