@@ -41,7 +41,7 @@ class RoomController {
 
 	async joinRoom(req, res, next) {
 		try {
-			const roomID = req.params.roomID;
+			const roomID = req.params.id;
 			const agentID = req.user._id;
 			const nlpEngine = req.nlpEngine._id;
 			const room = await roomService.joinRoom({
@@ -57,7 +57,7 @@ class RoomController {
 
 	async assignAgentToRoom(req, res, next) {
 		try {
-			const roomID = req.params.roomID;
+			const roomID = req.params.id;
 			const adminID = req.user._id;
 			const nlpEngine = req.nlpEngine._id;
 			const {
@@ -78,7 +78,7 @@ class RoomController {
 
 	async leftRoom(req, res, next) {
 		try {
-			const roomID = req.params.roomID;
+			const roomID = req.params.id;
 			const agentID = req.user._id;
 			const nlpEngine = req.nlpEngine._id;
 			await roomService.leftRoom({

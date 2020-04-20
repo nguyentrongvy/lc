@@ -9,7 +9,7 @@ class MessageService {
 		const room = await getRoom(botUser, nlpEngine);
 		const roomID = room._id;
 		const message = await this.create({
-            roomID,
+			roomID,
 			content,
 			channel,
 			botUser,
@@ -26,8 +26,7 @@ class MessageService {
 				lastMessage: message._id,
 			},
 		});
-		
-        return message.toObject();
+		return message.toObject();
 	}
 
 	create({ botUser, nlpEngine, roomID, content, channel, action }) {
@@ -41,7 +40,7 @@ class MessageService {
 		});
 	}
 
-	async getMessagesByRoomID({ channel, search, page, length, roomID }) {
+	async getMessagesByRoomID({ search, page, limit, roomID }) {
 		const condition = {
 			room: roomID,
 		};
@@ -51,17 +50,15 @@ class MessageService {
 		const sortCondition = {
 			createdAt: -1,
 		};
-		const [recordsTotal, messages] = await Promise.all([
-			messageRepository.count(condition),
-			messageRepository.getAll({
-				page,
-				limit: length,
-				where: condition,
-				sort: sortCondition,
-			})
-        ]);
+		const messages = await messageRepository.getAll({
+			page,
+			limit,
+			where: condition,
+			sort: sortCondition,
+			fields: 'botUser agent content createdAt',
+		});
 
-		return { recordsTotal, messages };
+		return messages;
 	}
 }
 

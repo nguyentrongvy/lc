@@ -3,6 +3,7 @@ const _ = require('lodash');
 
 const { roomRepository } = require('../repositories');
 const Constants = require('../common/constants');
+const messageService = require('./message.service');
 
 class RoomService {
 	getUnassignedRooms(lastRoom) {
