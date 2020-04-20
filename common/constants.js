@@ -38,7 +38,7 @@ const constants = {
 		CHAT: 'chat',
 	},
 	EVENT_TYPE: {
-		SEND_MESSAGE: 'send-message',
+		SEND_MESSAGE: 'send_message',
 	},
 };
 

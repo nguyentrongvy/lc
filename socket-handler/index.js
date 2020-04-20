@@ -9,7 +9,8 @@ function authenticationUser(socket, next) {
 			return next(new Error(Constants.ERROR.INVALID_TOKEN));
 		}
 		const verifiedData = jwtHelper.verifyToken(token);
-		socket.user = verifiedData;
+		socket.user = verifiedData.user;
+		socket.nlpEngine = verifiedData.org;
 		return next();
 	} catch (error) {
 		console.error(error);
