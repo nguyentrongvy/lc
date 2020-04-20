@@ -15,7 +15,7 @@ exports.load = (app) => {
 		messageController.sendMessage,
 	);
 	app.get(
-		'/api/v1/room/:id/messages',
+		'/api/v1/rooms/:id/messages',
 		[
 			validate(commonValidation.paramId()),
 			validate(commonValidation.pagination()),
