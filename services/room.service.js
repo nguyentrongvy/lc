@@ -4,6 +4,7 @@ const _ = require('lodash');
 const { roomRepository } = require('../repositories');
 const Constants = require('../common/constants');
 const messageService = require('./message.service');
+const usersService = require('./users.service');
 
 class RoomService {
 	getUnassignedRooms(lastRoom) {
@@ -25,31 +26,36 @@ class RoomService {
 		return getRooms(condition);
 	}
 
-	getAssignedRooms({ lastRoom, agentId }) {
+	async getAssignedRooms({ lastRoom, agentId }) {
 		const condition = {
 			agents: {
-				$ne: null,
-				$size: {
-					$gte: 1,
-				},
 				$elemMatch: {
-					_id: {
-						$ne: agentId,
-					}
-				}
-			}
+					$nin: [agentId],
+				},
+			},
+			$expr: {
+				$gte: [{ $size: "$agents" }, 1],
+			},
 		};
 		if (lastRoom) {
 			condition._id = {
 				$lt: lastRoom,
 			};
 		}
+
 		return getRooms(condition);
 	}
 
 	getOwnRooms({ lastRoom, agentId }) {
 		const condition = {
-			'agents._id': agentId,
+			agents: {
+				$elemMatch: {
+					$in: [agentId],
+				},
+			},
+			$expr: {
+				$gte: [{ $size: "$agents" }, 1],
+			},
 		};
 		if (lastRoom) {
 			condition._id = {
@@ -83,12 +89,12 @@ class RoomService {
 		room.agents = [agentID];
 		await room.save();
 
-		const userName = await getUser(agentID);
+		const userName = await usersService.getUser(agentID);
 		let content;
 		if (!adminID) {
 			content = `${userName} has joined this room.`;
 		} else {
-			const userNameAdmin = await getUser(adminID);
+			const userNameAdmin = await usersService.getUser(adminID);
 			content = `${userNameAdmin} has assigned ${userName} to this room.`;
 		}
 		const action = Constants.ACTION.JOIN_ROOM;
@@ -120,7 +126,7 @@ class RoomService {
 			throw new Error(Constants.ERROR.ROOM_NOT_FOUND);
 		}
 
-		const userName = await getUser(agentID);
+		const userName = await usersService.getUser(agentID);
 		const action = Constants.ACTION.LEFT_ROOM;
 		const content = `${userName} has left this room.`;
 		await messageService.create({
@@ -149,14 +155,4 @@ function getRooms(condition) {
 			updatedAt: -1,
 		},
 	});
-}
-
-async function getUser(agentID) {
-	const url = `${process.env.AUTH_SERVER}/users/${agentID}`;
-	const res = await axios.get(url, {
-		headers: { authorization: process.env.SERVER_API_KEY }
-	});
-
-	const username = _.get(res, 'data.data.name', '');
-	return username;
 }

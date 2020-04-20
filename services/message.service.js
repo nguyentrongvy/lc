@@ -71,7 +71,9 @@ function getRoom(botUser, nlpEngine) {
 		options: {
 			upsert: true,
 		},
-		data: {},
+		data: {
+			'botUser.username': userName,
+		},
 		fields: '_id',
 	};
 
