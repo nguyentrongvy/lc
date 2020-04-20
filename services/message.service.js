@@ -6,7 +6,7 @@ const Constants = require('../common/constants');
 
 class MessageService {
 	async sendMessage({ botUser, nlpEngine, content, channel }) {
-		const room = await createRoom(botUser, nlpEngine);
+		const room = await getRoom(botUser, nlpEngine);
 		const roomID = room._id;
 		const message = await this.create({
             roomID,
@@ -25,7 +25,8 @@ class MessageService {
 				unreadMessages,
 				lastMessage: message._id,
 			},
-        });
+		});
+		
         return message.toObject();
 	}
 
@@ -64,7 +65,7 @@ class MessageService {
 	}
 }
 
-function createRoom(botUser, nlpEngine) {
+function getRoom(botUser, nlpEngine) {
 	const options = {
 		where: {
 			'botUser._id': botUser,
@@ -75,7 +76,6 @@ function createRoom(botUser, nlpEngine) {
 		},
 		data: {},
 		fields: '_id',
-		isLean: false,
 	};
 
 	return roomRepository.getOneAndUpdate(options);
