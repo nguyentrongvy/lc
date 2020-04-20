@@ -24,12 +24,12 @@ function sendLog(data, env) {
 
 module.exports = (env) => ({
 	error: (err) => {
-        let message = '';
-        if (err instanceof Error) {
-            message = `\`ERROR\` ${err.stack}`;
-        } else {
-            message = `\`ERROR\` ${JSON.stringify(err)}`;
-        }
+		let message = '';
+		if (err instanceof Error) {
+			message = `\`ERROR\` ${err.stack}`;
+		} else {
+			message = `\`ERROR\` ${JSON.stringify(err)}`;
+		}
 		return sendLog(message, env);
 	},
 	info: (info) => {

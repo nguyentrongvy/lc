@@ -7,6 +7,7 @@ function ResponseSuccess(message, data, res) {
 	}
 	// TODO: custom status code response
 	return res.status(200).json({
+		success: true,
 		message,
 		data,
 	});

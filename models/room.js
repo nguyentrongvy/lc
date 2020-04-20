@@ -13,7 +13,7 @@ const roomSchema = new mongoose.Schema({
 			max: 1000,
 		},
 	},
-	agent: [{
+	agents: [{
 		type: mongoose.SchemaTypes.ObjectId,
 		ref: 'User',
 	}],
@@ -21,9 +21,9 @@ const roomSchema = new mongoose.Schema({
 		type: mongoose.SchemaTypes.ObjectId,
 		ref: 'Message',
 	},
-	bot: {
+	nlpEngine: {
 		type: mongoose.SchemaTypes.ObjectId,
-		ref: 'Bot',
+		ref: 'NlpEngine',
 		required: true,
 	},
 	channel: {

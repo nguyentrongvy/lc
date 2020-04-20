@@ -8,6 +8,7 @@ const constants = {
 		REQUIRED_USERNAME: 'Username is a required field.',
 		REQUIRED_PASSWORD: 'Password is a required field.',
 		REQUIRED_FIELD: 'Username or password must not be empty.',
+		ROOM_NOT_FOUND: 'NOT_EXIST_ROOM',
 	},
 	SUCCESS: {
 		GET_LIST_USERS: 'Get list users successfully.',
@@ -15,6 +16,9 @@ const constants = {
 		CREATE_USER: 'Create new user successfully.',
 		DELETE_USER: 'Deleting user by id successfully.',
 		UPDATE_USER: 'Update user successfully.',
+		JOIN_ROOM: 'JOIN_ROOM_SUCCESS',
+		LEFT_ROOM: 'LEFT_ROOM_SUCCESS',
+		SEND_MESSAGE: 'SEND_MESSAGE_SUCCESS',
 	},
 	REGEX: {
 		OBJECT_ID: /^(?=[a-f\d]{24}$)(\d+[a-f]|[a-f]+\d)/i,
@@ -25,6 +29,8 @@ const constants = {
 	},
 	ACTION: {
 		CHAT: 'chat',
+		JOIN_ROOM: 'join_room',
+		LEFT_ROOM: 'left_room',
 	},
 };
 
