@@ -9,6 +9,7 @@ const constants = {
 		REQUIRED_PASSWORD: 'Password is a required field.',
 		REQUIRED_FIELD: 'Username or password must not be empty.',
 		ROOM_NOT_FOUND: 'NOT_EXIST_ROOM',
+		INVALID_TOKEN: 'INVALID_TOKEN',
 	},
 	SUCCESS: {
 		GET_LIST_USERS: 'Get list users successfully.',
@@ -32,6 +33,12 @@ const constants = {
 		CHAT: 'chat',
 		JOIN_ROOM: 'join_room',
 		LEFT_ROOM: 'left_room',
+	},
+	EVENT: {
+		CHAT: 'chat',
+	},
+	EVENT_TYPE: {
+		SEND_MESSAGE: 'send-message',
 	},
 };
 

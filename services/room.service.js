@@ -29,14 +29,10 @@ class RoomService {
 		const condition = {
 			agents: {
 				$ne: null,
-				$size: {
-					$gte: 1,
-				},
+				$size: 1,
 				$elemMatch: {
-					_id: {
-						$ne: agentId,
-					}
-				}
+					$in: [agentId],
+				},
 			}
 		};
 		if (lastRoom) {

@@ -60,6 +60,10 @@ class MessageService {
 
 		return messages;
 	}
+
+	async sendAgentMessage({ agentId, roomId, content }) {
+		const roomId = await getRoom
+	}
 }
 
 function getRoom(botUser, nlpEngine) {
