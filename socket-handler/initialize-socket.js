@@ -16,7 +16,7 @@ exports.initialize = (io) => {
 			// ----------------------
 			// ------INIT EVENT------
 			// ----------------------
-			message.initEvent(socket);
+			message.initEvent(socket, io);
 
 			socket.on('disconnect', async function () {
 				try {

@@ -40,6 +40,7 @@ const constants = {
 	},
 	EVENT_TYPE: {
 		SEND_MESSAGE: 'send_message',
+		LAST_MESSAGE_AGENT: 'last_message_agent',
 	},
 };
 

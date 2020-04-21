@@ -71,7 +71,7 @@ class MessageService {
 				_id: roomId,
 				'agents': agentId,
 			},
-			fields: '_id channel lastMessage',
+			fields: '_id channel lastMessage botUser',
 			isLean: false,
 		});
 		if (!room) {
@@ -87,7 +87,10 @@ class MessageService {
 
 		room.lastMessage = message._id;
 		await room.save();
-		return message.toObject();
+		return {
+			room,
+			message: message.toObject(),
+		};
 	}
 }
 
