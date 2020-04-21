@@ -9,7 +9,7 @@ exports.load = (app) => {
 	app.get(
 		'/api/v1/rooms/unassigned',
 		[
-			validate(roomValidation.queryGetRooms()),
+			validate(commonValidation.pagination()),
 			authMiddleware.verifyToken,
 		],
 		roomController.getUnassignedRooms
@@ -18,7 +18,7 @@ exports.load = (app) => {
 	app.get(
 		'/api/v1/rooms/assigned',
 		[
-			validate(roomValidation.queryGetRooms()),
+			validate(commonValidation.pagination()),
 			authMiddleware.verifyToken,
 		],
 		roomController.getAssignedRooms,
@@ -27,7 +27,7 @@ exports.load = (app) => {
 	app.get(
 		'/api/v1/rooms/own',
 		[
-			validate(roomValidation.queryGetRooms()),
+			validate(commonValidation.pagination()),
 			authMiddleware.verifyToken,
 		],
 		roomController.getOwnRooms,

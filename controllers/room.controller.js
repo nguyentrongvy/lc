@@ -5,8 +5,8 @@ const roomService = require('../services/room.service');
 class RoomController {
 	async getUnassignedRooms(req, res, next) {
 		try {
-			const { lastRoom } = req.query;
-			const rooms = await roomService.getUnassignedRooms(lastRoom);
+			const { page, limit } = req.query;
+			const rooms = await roomService.getUnassignedRooms({ page, limit });
 			return ResponseSuccess(Constants.SUCCESS.GET_ROOMS, rooms, res);
 		} catch (error) {
 			next(error);
@@ -17,8 +17,8 @@ class RoomController {
 		try {
 			try {
 				const agentId = req.user._id;
-				const { lastRoom } = req.query;
-				const rooms = await roomService.getAssignedRooms({ lastRoom, agentId });
+				const { page, limit } = req.query;
+				const rooms = await roomService.getAssignedRooms({ page, limit, agentId });
 				return ResponseSuccess(Constants.SUCCESS.GET_ROOMS, rooms, res);
 			} catch (error) {
 				next(error);
@@ -31,8 +31,8 @@ class RoomController {
 	async getOwnRooms(req, res, next) {
 		try {
 			const agentId = req.user._id;
-			const { lastRoom } = req.query;
-			const rooms = await roomService.getOwnRooms({ lastRoom, agentId });
+			const { page, limit } = req.query;
+			const rooms = await roomService.getOwnRooms({ page, limit, agentId });
 			return ResponseSuccess(Constants.SUCCESS.GET_ROOMS, rooms, res);
 		} catch (error) {
 			next(error);
