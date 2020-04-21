@@ -6,6 +6,11 @@ const tagSchema = new mongoose.Schema({
 		required: true,
 		max: 1000,
 	},
+	nlpEngine: {
+		type: mongoose.SchemaTypes.ObjectId,
+		required: true,
+		ref: 'nlpEngine',
+	},
 	deletedAt: {
 		type: Date,
 	},

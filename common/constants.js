@@ -21,6 +21,7 @@ const constants = {
 		LEFT_ROOM: 'LEFT_ROOM_SUCCESS',
 		SEND_MESSAGE: 'SEND_MESSAGE_SUCCESS',
 		GET_LIST_MESSAGE: 'GET_LIST_MESSAGE_SUCCESS',
+		GET_ROOM: 'GET_ROOM_SUCCESS',
 	},
 	REGEX: {
 		OBJECT_ID: /^(?=[a-f\d]{24}$)(\d+[a-f]|[a-f]+\d)/i,

@@ -40,10 +40,15 @@ class MessageService {
 		});
 	}
 
-	async getMessagesByRoomID({ search, page, limit, roomID }) {
+	async getMessagesByRoomID({ search, lastMessage, roomID }) {
 		const condition = {
 			room: roomID,
 		};
+		if (lastMessage) {
+			condition._id = {
+				$lt: lastMessage,
+			};
+		}
 		if (search) {
 			condition.content = new RegExp(search, 'gi');
 		}
@@ -51,8 +56,6 @@ class MessageService {
 			createdAt: -1,
 		};
 		const messages = await messageRepository.getAll({
-			page,
-			limit,
 			where: condition,
 			sort: sortCondition,
 			fields: 'botUser agent content createdAt',

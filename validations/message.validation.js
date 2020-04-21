@@ -12,3 +12,9 @@ exports.sendMessage = () => ({
 		responses: Joi.array().items(Joi.object()),
 	}
 });
+
+exports.lastMessage = () => ({
+	query: {
+		lastMessage: Joi.string().regex(Constants.REGEX.OBJECT_ID),
+	}
+});
