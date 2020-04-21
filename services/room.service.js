@@ -21,7 +21,7 @@ class RoomService {
 		return getRooms(condition, page, limit);
 	}
 
-	async getAssignedRooms({ page, limit, agentId }) {
+	getAssignedRooms({ page, limit, agentId }) {
 		const condition = {
 			agents: {
 				$elemMatch: {
