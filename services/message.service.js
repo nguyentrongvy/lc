@@ -40,10 +40,15 @@ class MessageService {
 		});
 	}
 
-	async getMessagesByRoomID({ search, page, limit, roomID }) {
+	async getMessagesByRoomID({ search, lastMessage, roomID }) {
 		const condition = {
 			room: roomID,
 		};
+		if (lastMessage) {
+			condition._id = {
+				$lt: lastMessage,
+			};
+		}
 		if (search) {
 			condition.content = new RegExp(search, 'gi');
 		}
@@ -51,8 +56,6 @@ class MessageService {
 			createdAt: -1,
 		};
 		const messages = await messageRepository.getAll({
-			page,
-			limit,
 			where: condition,
 			sort: sortCondition,
 			fields: 'botUser agent content createdAt',
@@ -61,8 +64,30 @@ class MessageService {
 		return messages;
 	}
 
-	async sendAgentMessage({ agentId, roomId, content }) {
-		const roomId = await getRoom
+	async sendAgentMessage({ agentId, roomId, content, nlpEngine }) {
+		const room = await roomRepository.getOne({
+			where: {
+				nlpEngine,
+				_id: roomId,
+				'agents': agentId,
+			},
+			fields: '_id channel lastMessage',
+			isLean: false,
+		});
+		if (!room) {
+			throw new Error(Constants.ERROR.ROOM_NOT_FOUND);
+		}
+		const message = await messageRepository.create({
+			content,
+			nlpEngine,
+			room: roomId,
+			agent: agentId,
+			channel: room.channel,
+		});
+
+		room.lastMessage = message._id;
+		await room.save();
+		return message.toObject();
 	}
 }
 

@@ -58,4 +58,12 @@ exports.load = (app) => {
 		roomController.assignAgentToRoom,
 	);
 
+	app.get(
+		'/api/v1/rooms/:id',
+		[
+			validate(commonValidation.paramId),
+			authMiddleware.verifyToken,
+		],
+		roomController.getRoom,
+	);
 };

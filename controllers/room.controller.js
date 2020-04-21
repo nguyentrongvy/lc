@@ -92,6 +92,17 @@ class RoomController {
 			next(error);
 		}
 	}
+
+	async getRoom(req, res, next) {
+		try {
+			const roomId = req.params.id;
+			const agentId = req.user._id;
+			const room = await roomService.getRoom({ roomId, agentId });
+			return ResponseSuccess(Constants.SUCCESS.GET_ROOM, room, res);
+		} catch (error) {
+			next(error);
+		}
+	}
 }
 
 module.exports = new RoomController();

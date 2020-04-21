@@ -48,11 +48,7 @@ class RoomService {
 
 	getOwnRooms({ lastRoom, agentId }) {
 		const condition = {
-			agents: {
-				$elemMatch: {
-					$in: [agentId],
-				},
-			},
+			agents: agentId,
 			$expr: {
 				$gte: [{ $size: "$agents" }, 1],
 			},
@@ -114,7 +110,7 @@ class RoomService {
 		const options = {
 			where: {
 				_id: roomID,
-				'agents._id': agentID,
+				agents: agentID,
 			},
 			data: {
 				agent: [],
@@ -136,6 +132,21 @@ class RoomService {
 			agent: agentID,
 			channel: room.channel,
 			room: roomID,
+		});
+		return room;
+	}
+
+	async getRoom({roomId, agentId}) {
+		const room = await roomRepository.getOne({
+			where: {
+				_id: roomId,
+				agents: [agentId],
+			},
+			fields: 'botUser channel note tags',
+			populate: {
+				path: 'tags',
+				select: 'content',
+			},
 		});
 		return room;
 	}

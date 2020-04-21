@@ -8,20 +8,11 @@ exports.initialize = (io) => {
 			socket.join(userId);
 			const countMultiDevicesOnline = numClientsInRoom(io, '/', userId);
 			if (countMultiDevicesOnline === 1) {
-				await userRepository.updateOne({
-					where: {
-						_id: userId
-					},
-					data: {
-						isOnline: true
-					}
-				});
 				socket.broadcast.emit('status', {
 					action: 'ONLINE',
 					data: userId
 				});
 			}
-			console.log(countMultiDevicesOnline);
 			// ----------------------
 			// ------INIT EVENT------
 			// ----------------------
@@ -30,16 +21,7 @@ exports.initialize = (io) => {
 			socket.on('disconnect', async function () {
 				try {
 					const countMultiDevicesOnline = numClientsInRoom(io, '/', userId);
-					console.log(countMultiDevicesOnline);
 					if (countMultiDevicesOnline === 0) {
-						await userRepository.updateOne({
-							where: {
-								_id: userId
-							},
-							data: {
-								isOnline: false
-							}
-						});
 						socket.broadcast.emit('status', {
 							action: 'OFFLINE',
 							data: userId

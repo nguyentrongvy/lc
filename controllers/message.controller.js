@@ -29,12 +29,11 @@ class MessageControlelr {
 	async getMessagesByRoomID(req, res, next) {
 		try {
 			const { id: roomID } = req.params;
-			let { channel, search, page, limit } = req.query;
+			let { channel, search, lastMessage } = req.query;
 			const messages = await messageService.getMessagesByRoomID({
 				channel,
 				search,
-				page,
-				limit,
+				lastMessage,
 				roomID,
 			});
 			return ResponseSuccess(Constants.SUCCESS.GET_LIST_MESSAGE, messages, res);
