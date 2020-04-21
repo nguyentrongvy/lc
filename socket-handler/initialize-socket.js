@@ -1,9 +1,9 @@
 const { userRepository } = require('../repositories');
+const message = require('./message');
 
 exports.initialize = (io) => {
-	io.on('connection', async function(socket) {
+	io.on('connection', async function (socket) {
 		try {
-			console.log('A user is connected.');
 			const userId = socket.user._id;
 			socket.join(userId);
 			const countMultiDevicesOnline = numClientsInRoom(io, '/', userId);
@@ -25,11 +25,10 @@ exports.initialize = (io) => {
 			// ----------------------
 			// ------INIT EVENT------
 			// ----------------------
-			// message.initEvent(socket);
-            
-			socket.on('disconnect', async function() {
+			message.initEvent(socket);
+
+			socket.on('disconnect', async function () {
 				try {
-					console.log('A user is disconnect.');
 					const countMultiDevicesOnline = numClientsInRoom(io, '/', userId);
 					console.log(countMultiDevicesOnline);
 					if (countMultiDevicesOnline === 0) {
@@ -51,7 +50,7 @@ exports.initialize = (io) => {
 				}
 			});
 		} catch (error) {
-			console.error(error);            
+			console.error(error);
 		}
 	});
 };

@@ -10,7 +10,7 @@ exports.load = (app) => {
 		'/api/v1/messages',
 		[
 			validate(messageValidation.sendMessage()),
-			authenMiddleware.verifyToken,
+			// authenMiddleware.verifyToken,
 		],
 		messageController.sendMessage,
 	);
@@ -19,7 +19,7 @@ exports.load = (app) => {
 		[
 			validate(commonValidation.paramId()),
 			validate(commonValidation.pagination()),
-			authenMiddleware.verifyToken,
+			// authenMiddleware.verifyToken,
 		],
 		messageController.getMessagesByRoomID,
 	);
