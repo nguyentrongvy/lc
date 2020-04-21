@@ -14,13 +14,22 @@ class MessageControlelr {
 				entities,
 				responses,
 			} = req.body;
-			const result = await messageService.sendMessage({
+			const { message, room } = await messageService.sendMessage({
 				botUser,
 				nlpEngine,
 				content,
 				channel,
 			});
-			return ResponseSuccess(Constants.SUCCESS.SEND_MESSAGE, result, res);
+			await messageService.emitMessage({
+				room,
+				message,
+				intents,
+				entities,
+				nlpEngine,
+				responses,
+			});
+
+			return ResponseSuccess(Constants.SUCCESS.SEND_MESSAGE, message, res);
 		} catch (error) {
 			next(error);
 		}

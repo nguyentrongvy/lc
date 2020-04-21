@@ -7,7 +7,7 @@ const messageService = require('./message.service');
 const usersService = require('./users.service');
 
 class RoomService {
-	getUnassignedRooms(lastRoom) {
+	getUnassignedRooms({ page, limit }) {
 		const condition = {
 			$or: [
 				{
@@ -23,10 +23,10 @@ class RoomService {
 				$lt: lastRoom,
 			};
 		}
-		return getRooms(condition);
+		return getRooms(condition, page, limit);
 	}
 
-	async getAssignedRooms({ lastRoom, agentId }) {
+	async getAssignedRooms({ page, limit, agentId }) {
 		const condition = {
 			agents: {
 				$elemMatch: {
@@ -43,10 +43,10 @@ class RoomService {
 			};
 		}
 
-		return getRooms(condition);
+		return getRooms(condition, page, limit);
 	}
 
-	getOwnRooms({ lastRoom, agentId }) {
+	getOwnRooms({ page, limit, agentId }) {
 		const condition = {
 			agents: agentId,
 			$expr: {
@@ -58,7 +58,7 @@ class RoomService {
 				$lt: lastRoom,
 			};
 		}
-		return getRooms(condition);
+		return getRooms(condition, page, limit);
 	}
 
 	async joinRoom({ roomID, agentID, nlpEngine, adminID }) {
@@ -136,7 +136,7 @@ class RoomService {
 		return room;
 	}
 
-	async getRoom({roomId, agentId}) {
+	async getRoom({ roomId, agentId }) {
 		const room = await roomRepository.getOne({
 			where: {
 				_id: roomId,
@@ -154,8 +154,10 @@ class RoomService {
 
 module.exports = new RoomService();
 
-function getRooms(condition) {
+function getRooms(condition, page, limit) {
 	return roomRepository.getAll({
+		page,
+		limit,
 		where: condition,
 		fields: 'botUser lastMessage channel',
 		populate: {

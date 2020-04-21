@@ -3,6 +3,8 @@ const {
 	roomRepository,
 } = require('../repositories');
 const Constants = require('../common/constants');
+const { hmSetToRedis } = require('../services/redis.service');
+const { sendMessage } = require('../services/socket-emitter.service');
 
 class MessageService {
 	async sendMessage({ botUser, nlpEngine, content, channel }) {
@@ -26,7 +28,10 @@ class MessageService {
 				lastMessage: message._id,
 			},
 		});
-		return message.toObject();
+		return {
+			room,
+			message: message.toObject(),
+		};
 	}
 
 	create({ botUser, nlpEngine, roomID, content, channel, action }) {
@@ -92,6 +97,31 @@ class MessageService {
 			message: message.toObject(),
 		};
 	}
+
+	async emitMessage({
+		room,
+		message,
+		intents,
+		entities,
+		responses,
+		nlpEngine,
+	}) {
+		const roomId = room._id;
+		const dataStore = JSON.stringify({
+			intents,
+			entities,
+			responses,
+		});
+		await hmSetToRedis('suggestions', roomId.toString(), dataStore);
+		sendMessage({
+			room,
+			message,
+			intents,
+			entities,
+			responses,
+			nlpEngine,
+		});
+	}
 }
 
 function getRoom(botUser, nlpEngine) {
@@ -106,7 +136,7 @@ function getRoom(botUser, nlpEngine) {
 		data: {
 			'botUser.username': userName,
 		},
-		fields: '_id',
+		fields: '_id agents',
 	};
 
 	return roomRepository.getOneAndUpdate(options);
