@@ -97,8 +97,8 @@ class RoomController {
 		try {
 			const roomId = req.params.id;
 			const agentId = req.user._id;
-			const room = await roomService.getRoom({ roomId, agentId });
-			return ResponseSuccess(Constants.SUCCESS.GET_ROOM, room, res);
+			const data = await roomService.getRoom({ roomId, agentId });
+			return ResponseSuccess(Constants.SUCCESS.GET_ROOM, data, res);
 		} catch (error) {
 			next(error);
 		}

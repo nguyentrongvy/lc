@@ -136,7 +136,7 @@ class RoomService {
 		return room;
 	}
 
-	async getRoom({roomId, agentId}) {
+	async getRoom({ roomId, agentId }) {
 		const room = await roomRepository.getOne({
 			where: {
 				_id: roomId,
@@ -148,7 +148,9 @@ class RoomService {
 				select: 'content',
 			},
 		});
-		return room;
+		const botUser = await getBotUserByUserId(roomId);
+
+		return { room, botUser };
 	}
 }
 
@@ -166,4 +168,23 @@ function getRooms(condition) {
 			updatedAt: -1,
 		},
 	});
+}
+
+async function getBotUserByUserId(roomID) {
+	const option = {
+		where: {
+			_id: roomID,
+		},
+		fields: 'botUser',
+	};
+	const room = await roomRepository.getOne(option);
+	const userId = room.botUser._id;
+	const url = `${process.env.AUTH_SERVER}/v1/bot/users/${userId}`;
+	const res = await axios.get(url, {
+		headers: { authorization: process.env.SERVER_API_KEY }
+	});
+
+	const botUser = _.get(res, 'data.data', '');
+
+	return botUser;
 }
