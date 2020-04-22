@@ -1,10 +1,10 @@
-const axios = require('axios');
 const _ = require('lodash');
 
 const { roomRepository } = require('../repositories');
 const Constants = require('../common/constants');
 const messageService = require('./message.service');
 const usersService = require('./users.service');
+const { hmGetFromRedis } = require('../services/redis.service');
 
 class RoomService {
 	getUnassignedRooms({ page, limit }) {
@@ -133,7 +133,11 @@ class RoomService {
 				select: 'content',
 			},
 		});
-		return room;
+		const suggestions = await getSuggestionRedis(roomId);
+		return {
+			...room,
+			suggestions,
+		};
 	}
 }
 
@@ -153,4 +157,13 @@ function getRooms(condition, page, limit) {
 			updatedAt: -1,
 		},
 	});
+}
+
+async function getSuggestionRedis(roomId) {
+	const data = await hmGetFromRedis('suggestions', roomId);
+	try {
+		return JSON.parse(data);
+	} catch (error) {
+		return {};
+	}
 }
