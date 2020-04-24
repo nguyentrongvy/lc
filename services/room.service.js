@@ -1,13 +1,16 @@
-const axios = require('axios');
 const _ = require('lodash');
-
-const { roomRepository } = require('../repositories');
+const axios = require('axios');
+const {
+	roomRepository,
+	tagRepository,
+} = require('../repositories');
 const Constants = require('../common/constants');
 const messageService = require('./message.service');
 const usersService = require('./users.service');
+const { hmGetFromRedis } = require('../services/redis.service');
 
 class RoomService {
-	getUnassignedRooms({ page, limit }) {
+	getUnassignedRooms({ page, limit, search }) {
 		const condition = {
 			$or: [
 				{
@@ -18,10 +21,13 @@ class RoomService {
 				{ agents: null },
 			],
 		};
+		if (search) {
+			condition['botUser.username'] = new RegExp(search, 'gi');
+		}
 		return getRooms(condition, page, limit);
 	}
 
-	getAssignedRooms({ page, limit, agentId }) {
+	getAssignedRooms({ page, limit, agentId, search }) {
 		const condition = {
 			agents: {
 				$elemMatch: {
@@ -32,17 +38,24 @@ class RoomService {
 				$gte: [{ $size: "$agents" }, 1],
 			},
 		};
+		if (search) {
+			condition['botUser.username'] = new RegExp(search, 'gi');
+		}
 
 		return getRooms(condition, page, limit);
 	}
 
-	getOwnRooms({ page, limit, agentId }) {
+	getOwnRooms({ page, limit, agentId, search }) {
 		const condition = {
 			agents: agentId,
 			$expr: {
 				$gte: [{ $size: "$agents" }, 1],
 			},
 		};
+		if (search) {
+			condition['botUser.username'] = new RegExp(search, 'gi');
+		}
+
 		return getRooms(condition, page, limit);
 	}
 
@@ -98,7 +111,7 @@ class RoomService {
 				agents: agentID,
 			},
 			data: {
-				agent: [],
+				agents: [],
 			},
 			fields: 'channel',
 		};
@@ -134,8 +147,30 @@ class RoomService {
 			},
 		});
 		const botUser = await getBotUserByUserId(roomId);
+		const suggestions = await getSuggestionRedis(roomId);
+		return {
+			...room,
+			suggestions,
+			botUser,
+		};
+	}
 
-		return { room, botUser };
+	async updateRoomById({ roomId, tags, note }) {
+		await createTag(tags);
+
+		tags = _.uniqBy(tags, 'content');
+		const options = {
+			where: {
+				_id: roomId,
+			},
+			data: {
+				tags: tags,
+				note: note,
+			},
+			fields: "tags note",
+		};
+
+		return await roomRepository.getOneAndUpdate(options);
 	}
 }
 
@@ -174,4 +209,31 @@ async function getBotUserByUserId(roomID) {
 	const botUser = _.get(res, 'data.data', '');
 
 	return botUser;
+}
+
+async function getSuggestionRedis(roomId) {
+	const data = await hmGetFromRedis('suggestions', roomId);
+	try {
+		return JSON.parse(data);
+	} catch (error) {
+		return {};
+	}
+}
+
+async function createTag(tags) {
+	// find tags exist db.
+	const tagsName = tags.map(tag => tag.content);
+	const existingTags = await tagRepository.getAll({
+		where: {
+			content: tagsName,
+		},
+		fields: "content",
+	})
+
+	// create tags new.
+	
+	const tagsNew = _.difference(tagsName, existingTags);
+	if (tagsNew && tagsNew.length != 0) {
+		await tagRepository.create(tagsNew);
+	}
 }

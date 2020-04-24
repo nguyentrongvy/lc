@@ -8,7 +8,7 @@ const { sendMessage } = require('../services/socket-emitter.service');
 
 class MessageService {
 	async sendMessage({ botUser, nlpEngine, content, channel }) {
-		const room = await getRoom(botUser, nlpEngine);
+		const room = await getRoom({ botUser, nlpEngine, channel });
 		const roomID = room._id;
 		const message = await this.create({
 			roomID,
@@ -34,11 +34,11 @@ class MessageService {
 		};
 	}
 
-	create({ botUser, nlpEngine, roomID, content, channel, action }) {
+	create({ botUser, nlpEngine, room, content, channel, action }) {
 		return messageRepository.create({
 			botUser: botUser,
 			nlpEngine: nlpEngine,
-			room: roomID,
+			room,
 			content: content,
 			channel: channel,
 			action: (action ? action : Constants.ACTION.CHAT),
@@ -124,17 +124,18 @@ class MessageService {
 	}
 }
 
-function getRoom(botUser, nlpEngine) {
+function getRoom({ botUser, nlpEngine, channel }) {
 	const options = {
 		where: {
+			nlpEngine,
+			channel,
 			'botUser._id': botUser,
-			'nlpEngine': nlpEngine,
 		},
 		options: {
 			upsert: true,
 		},
 		data: {
-			'botUser.username': userName,
+			'botUser.username': botUser.userName || '',
 		},
 		fields: '_id agents',
 	};

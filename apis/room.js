@@ -66,4 +66,12 @@ exports.load = (app) => {
 		],
 		roomController.getRoom,
 	);
+
+	app.put(
+		'/api/v1/rooms/:id',
+		[
+
+		],
+		roomController.updateRoomById,
+	)
 };
