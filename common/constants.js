@@ -41,6 +41,8 @@ const constants = {
 	EVENT_TYPE: {
 		SEND_MESSAGE: 'send_message',
 		LAST_MESSAGE_AGENT: 'last_message_agent',
+		SEND_UNASSIGNED_CHAT: 'unassigned_chat',
+		SEND_USER_MESSAGE: 'user_message',
 	},
 	REDIS: {
 		PREFIX: {

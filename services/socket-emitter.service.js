@@ -11,45 +11,37 @@ exports.sendMessage = ({
     responses,
     nlpEngine,
 }) => {
-    const agentId = _.get(room, 'agents[0]');
+    const agentId = _.get(room, 'agents[0]', '').toString();
+    const payload = {
+        room,
+        message,
+        intents,
+        entities,
+        responses,
+    };
     if (!agentId) {
         socketEmitter.to(nlpEngine).emit(
             Constants.EVENT.CHAT,
             {
-                type: Constants.EVENT_TYPE.SEND_USER_MESSAGE,
-                payload: {
-                    room,
-                    message,
-                    intents,
-                    entities,
-                    responses,
-                },
+                payload,
+                type: Constants.EVENT_TYPE.SEND_UNASSIGNED_CHAT,
             },
         );
     } else {
         socketEmitter.to(agentId).emit(
             Constants.EVENT.CHAT,
             {
+                payload,
                 type: Constants.EVENT_TYPE.SEND_USER_MESSAGE,
-                payload: {
-                    room,
-                    message,
-                    intents,
-                    entities,
-                    responses,
-                },
             },
         );
     }
-    // socketEmitter.to(userId).emit('chat', {
-    //     type: 'bot-message',
-    //     responses,
-    // });
-};
+    };
+
 
 exports.sendBotMessage = (agentId, dataEmit) => {
     if (!agentId) {
         return;
     }
-    socketEmitter.to(agentId).emit(Constants.EVENT.CHAT, dataEmit);
+    socketEmitter.to(agentId.toString()).emit(Constants.EVENT.CHAT, dataEmit);
 };
