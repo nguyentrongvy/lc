@@ -194,10 +194,11 @@ async function getRoomTimers(rooms, nlpEngine) {
 		return `${Constants.REDIS.PREFIX.ROOM}${id}_${nlpEngineStr}`;
 	});
 	const ttls = await getTtlRedis(keys);
+	const now = new Date().getTime();
 	return rooms.map((room, i) => {
 		return {
 			...room,
-			ttl: ttls[i],
+			ttl: now + ttls[i] * 1000,
 		};
 	});
 }

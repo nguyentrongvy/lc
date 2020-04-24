@@ -38,14 +38,15 @@ class MessageService {
 
 		await setExToRedis(
 			`${Constants.REDIS.PREFIX.ROOM}${roomID}_${nlpEngine}`,
-			Constants.REDIS.ROOM.EXPIRE_TIME,
+			parseInt(Constants.REDIS.ROOM.EXPIRE_TIME / 1000),
 			true,
 		);
 
+		const expiredTime = new Date().getTime() + Constants.REDIS.ROOM.EXPIRE_TIME;
 		return {
 			room: {
 				...room,
-				ttl: Constants.REDIS.ROOM.EXPIRE_TIME - 2,
+				ttl: expiredTime,
 			},
 			message: message.toObject(),
 		};

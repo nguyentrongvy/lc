@@ -30,7 +30,7 @@ exports.initEvent = (socket, io) => {
                     };
                     socket.broadcast.to(agentId).emit(
                         Constants.EVENT.CHAT,
-                        dataEmit,  
+                        dataEmit,
                     );
                     await messageService.sendToBot({
                         room,
@@ -56,5 +56,9 @@ function removeTimer(roomId, nlpEngine) {
 
 function increaseTimer(roomId, nlpEngine) {
     const key = `${Constants.REDIS.PREFIX.ROOM}${roomId}_${nlpEngine}`;
-    return setExToRedis(key, Constants.REDIS.ROOM.EXPIRE_TIME, true);
+    return setExToRedis(
+        key,
+        parseInt(Constants.REDIS.ROOM.EXPIRE_TIME / 1000),
+        true
+    );
 }

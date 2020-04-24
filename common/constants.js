@@ -49,7 +49,7 @@ const constants = {
 			ROOM: 'room_',
 		},
 		ROOM: {
-			EXPIRE_TIME: 20,
+			EXPIRE_TIME: 15 * 1000, // ms
 		},
 	},
 };
