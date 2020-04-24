@@ -28,7 +28,7 @@ exports.sendMessage = ({
             },
         );
     } else {
-        socketEmitter.to(agentId).emit(
+        socketEmitter.to(agentId.toString()).emit(
             Constants.EVENT.CHAT,
             {
                 payload,
@@ -36,8 +36,7 @@ exports.sendMessage = ({
             },
         );
     }
-    };
-
+};
 
 exports.sendBotMessage = (agentId, dataEmit) => {
     if (!agentId) {

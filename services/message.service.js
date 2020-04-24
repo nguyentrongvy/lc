@@ -52,11 +52,11 @@ class MessageService {
 		};
 	}
 
-	create({ botUser, nlpEngine, roomID, content, channel, action }) {
+	create({ botUser, nlpEngine, room, content, channel, action }) {
 		return messageRepository.create({
 			botUser: botUser,
 			nlpEngine: nlpEngine,
-			room: roomID,
+			room,
 			content: content,
 			channel: channel,
 			action: (action ? action : Constants.ACTION.CHAT),

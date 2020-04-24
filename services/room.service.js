@@ -1,14 +1,17 @@
-const axios = require('axios');
 const _ = require('lodash');
-
-const { roomRepository } = require('../repositories');
+const axios = require('axios');
+const {
+	roomRepository,
+	tagRepository,
+} = require('../repositories');
 const Constants = require('../common/constants');
 const messageService = require('./message.service');
 const usersService = require('./users.service');
+const { hmGetFromRedis } = require('../services/redis.service');
 const { getTtlRedis } = require('./redis.service');
 
 class RoomService {
-	async getUnassignedRooms({ page, limit, nlpEngine }) {
+	async getUnassignedRooms({ page, limit, search, nlpEngine }) {
 		const condition = {
 			nlpEngine,
 			$or: [
@@ -20,11 +23,14 @@ class RoomService {
 				{ agents: null },
 			],
 		};
+		if (search) {
+			condition['botUser.username'] = new RegExp(search, 'gi');
+		}
 		const rooms = await getRooms(condition, page, limit);
 		return await getRoomTimers(rooms, nlpEngine);
 	}
 
-	getAssignedRooms({ page, limit, agentId, nlpEngine }) {
+	getAssignedRooms({ page, limit, agentId, nlpEngine, search }) {
 		const condition = {
 			nlpEngine,
 			agents: {
@@ -36,11 +42,14 @@ class RoomService {
 				$gte: [{ $size: "$agents" }, 1],
 			},
 		};
+		if (search) {
+			condition['botUser.username'] = new RegExp(search, 'gi');
+		}
 
 		return getRooms(condition, page, limit);
 	}
 
-	async getOwnRooms({ page, limit, agentId, nlpEngine }) {
+	async getOwnRooms({ page, limit, agentId, nlpEngine, search }) {
 		const condition = {
 			nlpEngine,
 			agents: agentId,
@@ -48,6 +57,9 @@ class RoomService {
 				$gte: [{ $size: "$agents" }, 1],
 			},
 		};
+		if (search) {
+			condition['botUser.username'] = new RegExp(search, 'gi');
+		}
 		const rooms = await getRooms(condition, page, limit);
 		return await getRoomTimers(rooms, nlpEngine);
 	}
@@ -104,7 +116,7 @@ class RoomService {
 				agents: agentID,
 			},
 			data: {
-				agent: [],
+				agents: [],
 			},
 			fields: 'channel',
 		};
@@ -148,6 +160,23 @@ class RoomService {
 			botUser,
 		};
 	}
+
+	async updateRoomById({ roomId, tags, note, nlpEngine }) {
+		const tagsCreated = await createTags(tags, nlpEngine);
+		const tagsId = tagsCreated.map(tag => tag._id);
+		const options = {
+			where: {
+				_id: roomId,
+			},
+			data: {
+				tags: tagsId,
+				note: note,
+			},
+			fields: "tags note",
+		};
+
+		return await roomRepository.getOneAndUpdate(options);
+	}
 }
 
 module.exports = new RoomService();
@@ -185,6 +214,36 @@ async function getBotUserByUserId(roomID) {
 	const botUser = _.get(res, 'data.data', '');
 
 	return botUser;
+}
+
+async function createTags(tags, nlpEngine) {
+	if (!tags) return [];
+	const tagsUnique = _.uniqBy(tags, 'content');
+	// find tags exist db.
+	const inputTags = tagsUnique.map(tag => tag.content);
+	const existingTags = await tagRepository.getAll({
+		where: {
+			content: inputTags,
+		},
+		fields: "content",
+	});
+	if (!existingTags || existingTags.length == 0) return tagsUnique;
+
+	const tagsNew = tagsUnique.reduce((initValue, currentValue) => {
+		const exist = existingTags.some(tag => tag.content == currentValue.content);
+		if (!exist) {
+			initValue.push({ content: currentValue.content, nlpEngine: nlpEngine });
+		}
+		return initValue;
+	}, []);
+
+	let tagsCreated = [];
+	if (tagsNew && tagsNew.length != 0) {
+		tagsCreated = await tagRepository.create(tagsNew);
+		tagsCreated = tagsCreated.map(({ _id, content }) => ({ _id, content }));
+	}
+
+	return [...existingTags, ...tagsCreated];
 }
 
 async function getRoomTimers(rooms, nlpEngine) {
