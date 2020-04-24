@@ -1,9 +1,16 @@
+const axios = require('axios');
+const _ = require('lodash');
+
 const {
 	messageRepository,
 	roomRepository,
 } = require('../repositories');
 const Constants = require('../common/constants');
-const { hmSetToRedis } = require('../services/redis.service');
+const {
+	hmSetToRedis,
+	setExToRedis,
+	hmGetFromRedis,
+} = require('../services/redis.service');
 const { sendMessage } = require('../services/socket-emitter.service');
 
 class MessageService {
@@ -28,8 +35,18 @@ class MessageService {
 				lastMessage: message._id,
 			},
 		});
+
+		await setExToRedis(
+			`${Constants.REDIS.PREFIX.ROOM}${roomID}_${nlpEngine}`,
+			Constants.REDIS.ROOM.EXPIRE_TIME,
+			true,
+		);
+
 		return {
-			room,
+			room: {
+				...room,
+				ttl: Constants.REDIS.ROOM.EXPIRE_TIME - 2,
+			},
 			message: message.toObject(),
 		};
 	}
@@ -76,7 +93,7 @@ class MessageService {
 				_id: roomId,
 				'agents': agentId,
 			},
-			fields: '_id channel lastMessage botUser',
+			fields: '_id channel lastMessage botUser unreadMessages nlpEngine',
 			isLean: false,
 		});
 		if (!room) {
@@ -91,9 +108,37 @@ class MessageService {
 		});
 
 		room.lastMessage = message._id;
+		room.unreadMessages = 0;
 		await room.save();
 		return {
 			room,
+			message: message.toObject(),
+		};
+	}
+
+	async sendBotMessage({ roomId, content, nlpEngine }) {
+		const room = await roomRepository.getOne({
+			where: {
+				nlpEngine,
+				_id: roomId,
+			},
+			fields: '_id channel lastMessage botUser agents nlpEngine',
+			isLean: false,
+		});
+		if (!room) {
+			throw new Error(Constants.ERROR.ROOM_NOT_FOUND);
+		}
+		const message = await messageRepository.create({
+			nlpEngine,
+			room: roomId,
+			content: JSON.stringify(content),
+			channel: room.channel,
+		});
+
+		room.lastMessage = message._id;
+		await room.save();
+		return {
+			room: room.toObject(),
 			message: message.toObject(),
 		};
 	}
@@ -111,8 +156,9 @@ class MessageService {
 			intents,
 			entities,
 			responses,
+			text: message.content,
 		});
-		await hmSetToRedis('suggestions', roomId.toString(), dataStore);
+		await hmSetToRedis(nlpEngine.toString(), roomId.toString(), dataStore);
 		sendMessage({
 			room,
 			message,
@@ -121,6 +167,62 @@ class MessageService {
 			responses,
 			nlpEngine,
 		});
+	}
+
+	async sendToBot({
+		room,
+		intents,
+		entities,
+		responses,
+	}) {
+		const userId = _.get(room, 'botUser._id', '').toString();
+		const nlpEngine = _.get(room, 'nlpEngine', '').toString();
+		const roomId = room._id.toString();
+		const channel = room.channel;
+		// TODO: change format message
+		let validResponses = responses;
+		if (!_.isArray(responses)) {
+			validResponses = [responses];
+		}
+
+		const {
+			text,
+			intents: oldIntents,
+			entities: oldEntities,
+		} = await this.getSuggestionRedis(roomId, nlpEngine);
+
+		const url = `${process.env.NLP_SERVER}/api/v1/agents/messages`;
+		await axios.post(url, {
+			text,
+			userId,
+			channel,
+			intents,
+			oldIntents,
+			entities,
+			oldEntities,
+			responses: validResponses,
+		}, {
+			headers: {
+				authorization: process.env.SERVER_API_KEY,
+				engineid: nlpEngine,
+			},
+		});
+		await removeSuggestions(roomId, nlpEngine);
+	}
+
+	async getSuggestionRedis(roomId, nlpEngine) {
+		const data = await hmGetFromRedis(
+			nlpEngine.toString(),
+			roomId.toString()
+		);
+		try {
+			const suggestions = JSON.parse(data);
+			if (typeof suggestions === 'object') {
+				return suggestions;
+			}
+		} catch (error) {
+		}
+		return {};
 	}
 }
 
@@ -141,6 +243,10 @@ function getRoom({ botUser, nlpEngine, channel }) {
 	};
 
 	return roomRepository.getOneAndUpdate(options);
+}
+
+function removeSuggestions(roomId, nlpEngine) {
+	return hmSetToRedis(nlpEngine, roomId, '');
 }
 
 module.exports = new MessageService();

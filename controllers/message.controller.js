@@ -20,6 +20,7 @@ class MessageControlelr {
 				content,
 				channel,
 			});
+
 			await messageService.emitMessage({
 				room,
 				message,

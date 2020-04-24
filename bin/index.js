@@ -3,6 +3,8 @@ require('dotenv').config();
 const { dbSettings, serverSettings } = require('../configs');
 const models = require('../models');
 const server = require('./server');
+const { notifyExpiredKey } = require('../services/redis.service');
+const timerResponseBot = require('../services/timer.service');
 
 let connectionDB;
 
@@ -34,6 +36,8 @@ models.connectDB(dbSettings)
 			console.log('Server stopped.');
 			connectionDB.disconnect();
 		});
+
+		notifyExpiredKey(timerResponseBot.run);
 
 		process.on('SIGINT', cleanup(app));
 		process.on('SIGTERM', cleanup(app));

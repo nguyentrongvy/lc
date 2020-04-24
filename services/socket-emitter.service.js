@@ -11,7 +11,7 @@ exports.sendMessage = ({
     responses,
     nlpEngine,
 }) => {
-    const agentId = _.get(room, 'agents[0]');
+    const agentId = _.get(room, 'agents[0]', '').toString();
     const payload = {
         room,
         message,
@@ -36,4 +36,12 @@ exports.sendMessage = ({
             },
         );
     }
+    };
+
+
+exports.sendBotMessage = (agentId, dataEmit) => {
+    if (!agentId) {
+        return;
+    }
+    socketEmitter.to(agentId.toString()).emit(Constants.EVENT.CHAT, dataEmit);
 };
