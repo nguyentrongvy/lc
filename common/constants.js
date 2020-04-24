@@ -23,6 +23,7 @@ const constants = {
 		GET_LIST_MESSAGE: 'GET_LIST_MESSAGE_SUCCESS',
 		GET_ROOMS: 'GET_ROOM_SUCCESS',
 		GET_TAGS: 'GET_TAG_SUCCESS',
+		UPDATE_ROOM_SUCCESS: 'UPDATE_ROOM_SUCCESS',
 	},
 	REGEX: {
 		OBJECT_ID: /^(?=[a-f\d]{24}$)(\d+[a-f]|[a-f]+\d)/i,

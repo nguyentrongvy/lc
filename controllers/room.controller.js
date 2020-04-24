@@ -123,8 +123,10 @@ class RoomController {
 	async updateRoomById(req, res, next) {
 		try {
 			const roomId = req.params.id;
-			const { tags, note } = req.query;
-			const room = await roomService.updateRoomById({ roomId, tags, note });
+			const nlpEngine = req.nlpEngine._id;
+			const { tags, note } = req.body;
+			const room = await roomService.updateRoomById({ roomId, tags, note, nlpEngine });
+			return ResponseSuccess(Constants.SUCCESS.UPDATE_ROOM_SUCCESS, room, res);
 		} catch (error) {
 			next(error);
 		}

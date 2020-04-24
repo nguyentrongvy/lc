@@ -70,7 +70,7 @@ exports.load = (app) => {
 	app.put(
 		'/api/v1/rooms/:id',
 		[
-
+			authMiddleware.verifyToken,
 		],
 		roomController.updateRoomById,
 	)

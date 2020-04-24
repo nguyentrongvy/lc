@@ -11,7 +11,7 @@ const { hmGetFromRedis } = require('../services/redis.service');
 const { getTtlRedis } = require('./redis.service');
 
 class RoomService {
-	getUnassignedRooms({ page, limit, search }) {
+	async getUnassignedRooms({ page, limit, search, nlpEngine }) {
 		const condition = {
 			nlpEngine,
 			$or: [
@@ -30,7 +30,7 @@ class RoomService {
 		return await getRoomTimers(rooms, nlpEngine);
 	}
 
-	getAssignedRooms({ page, limit, agentId, nlpEngine }) {
+	getAssignedRooms({ page, limit, agentId, nlpEngine, search }) {
 		const condition = {
 			nlpEngine,
 			agents: {
@@ -49,7 +49,7 @@ class RoomService {
 		return getRooms(condition, page, limit);
 	}
 
-	async getOwnRooms({ page, limit, agentId, nlpEngine }) {
+	async getOwnRooms({ page, limit, agentId, nlpEngine, search }) {
 		const condition = {
 			nlpEngine,
 			agents: agentId,
@@ -161,16 +161,15 @@ class RoomService {
 		};
 	}
 
-	async updateRoomById({ roomId, tags, note }) {
-		await createTag(tags);
-
-		tags = _.uniqBy(tags, 'content');
+	async updateRoomById({ roomId, tags, note, nlpEngine }) {
+		const tagsCreated = await createTags(tags, nlpEngine);
+		const tagsId = tagsCreated.map(tag => tag._id);
 		const options = {
 			where: {
 				_id: roomId,
 			},
 			data: {
-				tags: tags,
+				tags: tagsId,
 				note: note,
 			},
 			fields: "tags note",
@@ -217,23 +216,36 @@ async function getBotUserByUserId(roomID) {
 	return botUser;
 }
 
-async function createTag(tags) {
+async function createTags(tags, nlpEngine) {
+	if (!tags) return [];
+	const tagsUnique = _.uniqBy(tags, 'content');
 	// find tags exist db.
-	const tagsName = tags.map(tag => tag.content);
+	const inputTags = tagsUnique.map(tag => tag.content);
 	const existingTags = await tagRepository.getAll({
 		where: {
-			content: tagsName,
+			content: inputTags,
 		},
 		fields: "content",
-	})
+	});
+	if (!existingTags || existingTags.length == 0) return tagsUnique;
 
-	// create tags new.
-	
-	const tagsNew = _.difference(tagsName, existingTags);
+	const tagsNew = tagsUnique.reduce((initValue, currentValue) => {
+		const exist = existingTags.some(tag => tag.content == currentValue.content);
+		if (!exist) {
+			initValue.push({ content: currentValue.content, nlpEngine: nlpEngine });
+		}
+		return initValue;
+	}, []);
+
+	let tagsCreated = [];
 	if (tagsNew && tagsNew.length != 0) {
-		await tagRepository.create(tagsNew);
+		tagsCreated = await tagRepository.create(tagsNew);
+		tagsCreated = tagsCreated.map(({ _id, content }) => ({ _id, content }));
 	}
+
+	return [...existingTags, ...tagsCreated];
 }
+
 async function getRoomTimers(rooms, nlpEngine) {
 	const nlpEngineStr = nlpEngine.toString();
 	const keys = rooms.map(room => {

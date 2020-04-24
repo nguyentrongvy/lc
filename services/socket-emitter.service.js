@@ -36,8 +36,7 @@ exports.sendMessage = ({
             },
         );
     }
-    };
-
+};
 
 exports.sendBotMessage = (agentId, dataEmit) => {
     if (!agentId) {
