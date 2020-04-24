@@ -5,10 +5,12 @@ const { roomRepository } = require('../repositories');
 const Constants = require('../common/constants');
 const messageService = require('./message.service');
 const usersService = require('./users.service');
+const { getTtlRedis } = require('./redis.service');
 
 class RoomService {
-	getUnassignedRooms({ page, limit }) {
+	async getUnassignedRooms({ page, limit, nlpEngine }) {
 		const condition = {
+			nlpEngine,
 			$or: [
 				{
 					agents: {
@@ -18,11 +20,13 @@ class RoomService {
 				{ agents: null },
 			],
 		};
-		return getRooms(condition, page, limit);
+		const rooms = await getRooms(condition, page, limit);
+		return await getRoomTimers(rooms, nlpEngine);
 	}
 
-	getAssignedRooms({ page, limit, agentId }) {
+	getAssignedRooms({ page, limit, agentId, nlpEngine }) {
 		const condition = {
+			nlpEngine,
 			agents: {
 				$elemMatch: {
 					$nin: [agentId],
@@ -36,14 +40,16 @@ class RoomService {
 		return getRooms(condition, page, limit);
 	}
 
-	getOwnRooms({ page, limit, agentId }) {
+	async getOwnRooms({ page, limit, agentId, nlpEngine }) {
 		const condition = {
+			nlpEngine,
 			agents: agentId,
 			$expr: {
 				$gte: [{ $size: "$agents" }, 1],
 			},
 		};
-		return getRooms(condition, page, limit);
+		const rooms = await getRooms(condition, page, limit);
+		return await getRoomTimers(rooms, nlpEngine);
 	}
 
 	async joinRoom({ roomID, agentID, nlpEngine, adminID }) {
@@ -127,15 +133,20 @@ class RoomService {
 				_id: roomId,
 				agents: [agentId],
 			},
-			fields: 'botUser channel note tags',
+			fields: 'botUser channel note tags nlpEngine',
 			populate: {
 				path: 'tags',
 				select: 'content',
 			},
 		});
 		const botUser = await getBotUserByUserId(roomId);
-
-		return { room, botUser };
+		const nlpEngine = room.nlpEngine.toString();
+		const suggestions = await messageService.getSuggestionRedis(roomId, nlpEngine);
+		return {
+			...room,
+			suggestions,
+			botUser,
+		};
 	}
 }
 
@@ -146,7 +157,7 @@ function getRooms(condition, page, limit) {
 		page,
 		limit,
 		where: condition,
-		fields: 'botUser lastMessage channel',
+		fields: 'botUser lastMessage channel unreadMessages',
 		populate: {
 			path: 'lastMessage',
 			select: 'content createdAt botUser agent',
@@ -166,7 +177,7 @@ async function getBotUserByUserId(roomID) {
 	};
 	const room = await roomRepository.getOne(option);
 	const userId = room.botUser._id;
-	const url = `${process.env.AUTH_SERVER}/v1/bot/users/${userId}`;
+	const url = `${process.env.NLP_SERVER}/v1/bot/users/${userId}`;
 	const res = await axios.get(url, {
 		headers: { authorization: process.env.SERVER_API_KEY }
 	});
@@ -174,4 +185,19 @@ async function getBotUserByUserId(roomID) {
 	const botUser = _.get(res, 'data.data', '');
 
 	return botUser;
+}
+
+async function getRoomTimers(rooms, nlpEngine) {
+	const nlpEngineStr = nlpEngine.toString();
+	const keys = rooms.map(room => {
+		const id = room._id.toString();
+		return `${Constants.REDIS.PREFIX.ROOM}${id}_${nlpEngineStr}`;
+	});
+	const ttls = await getTtlRedis(keys);
+	return rooms.map((room, i) => {
+		return {
+			...room,
+			ttl: ttls[i],
+		};
+	});
 }

@@ -5,8 +5,13 @@ const roomService = require('../services/room.service');
 class RoomController {
 	async getUnassignedRooms(req, res, next) {
 		try {
+			const nlpEngine = req.nlpEngine._id;
 			const { page, limit } = req.query;
-			const rooms = await roomService.getUnassignedRooms({ page, limit });
+			const rooms = await roomService.getUnassignedRooms({
+				page,
+				limit,
+				nlpEngine,
+			});
 			return ResponseSuccess(Constants.SUCCESS.GET_ROOMS, rooms, res);
 		} catch (error) {
 			next(error);
@@ -15,14 +20,16 @@ class RoomController {
 
 	async getAssignedRooms(req, res, next) {
 		try {
-			try {
-				const agentId = req.user._id;
-				const { page, limit } = req.query;
-				const rooms = await roomService.getAssignedRooms({ page, limit, agentId });
-				return ResponseSuccess(Constants.SUCCESS.GET_ROOMS, rooms, res);
-			} catch (error) {
-				next(error);
-			}
+			const nlpEngine = req.nlpEngine._id;
+			const agentId = req.user._id;
+			const { page, limit } = req.query;
+			const rooms = await roomService.getAssignedRooms({
+				page,
+				limit,
+				agentId,
+				nlpEngine,
+			});
+			return ResponseSuccess(Constants.SUCCESS.GET_ROOMS, rooms, res);
 		} catch (error) {
 			next(error);
 		}
@@ -30,9 +37,15 @@ class RoomController {
 
 	async getOwnRooms(req, res, next) {
 		try {
+			const nlpEngine = req.nlpEngine._id;
 			const agentId = req.user._id;
 			const { page, limit } = req.query;
-			const rooms = await roomService.getOwnRooms({ page, limit, agentId });
+			const rooms = await roomService.getOwnRooms({
+				page,
+				limit,
+				agentId,
+				nlpEngine,
+			});
 			return ResponseSuccess(Constants.SUCCESS.GET_ROOMS, rooms, res);
 		} catch (error) {
 			next(error);

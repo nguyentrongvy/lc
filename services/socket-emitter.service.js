@@ -46,3 +46,10 @@ exports.sendMessage = ({
     //     responses,
     // });
 };
+
+exports.sendBotMessage = (agentId, dataEmit) => {
+    if (!agentId) {
+        return;
+    }
+    socketEmitter.to(agentId).emit(Constants.EVENT.CHAT, dataEmit);
+};

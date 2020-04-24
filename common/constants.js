@@ -42,6 +42,14 @@ const constants = {
 		SEND_MESSAGE: 'send_message',
 		LAST_MESSAGE_AGENT: 'last_message_agent',
 	},
+	REDIS: {
+		PREFIX: {
+			ROOM: 'room_',
+		},
+		ROOM: {
+			EXPIRE_TIME: 20,
+		},
+	},
 };
 
 module.exports = Object.freeze(constants);
