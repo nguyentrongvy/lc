@@ -6,6 +6,24 @@ const authMiddleware = require('../middlewares/authentication.middleware');
 const roomController = require('../controllers/room.controller');
 
 exports.load = (app) => {
+	app.put(
+		'/api/v1/rooms/:id/stop',
+		[
+			validate(commonValidation.paramId()),
+			authMiddleware.verifyToken,
+		],
+		roomController.stopBot
+	);
+
+	app.put(
+		'/api/v1/rooms/:id/start',
+		[
+			validate(commonValidation.paramId()),
+			authMiddleware.verifyToken,
+		],
+		roomController.startBot
+	);
+
 	app.get(
 		'/api/v1/rooms/unassigned',
 		[
@@ -73,5 +91,5 @@ exports.load = (app) => {
 			authMiddleware.verifyToken,
 		],
 		roomController.updateRoomById,
-	)
+	);
 };

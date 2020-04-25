@@ -131,6 +131,28 @@ class RoomController {
 			next(error);
 		}
 	}
+
+	async stopBot(req, res, next) {
+		try {
+			const roomId = req.params.id;
+			const nlpEngine = req.nlpEngine._id;
+			await roomService.stopBot(roomId, nlpEngine);
+			return ResponseSuccess(Constants.SUCCESS.STOP_BOT, null, res);
+		} catch (error) {
+			next(error);
+		}
+	}
+
+	async startBot(req, res, next) {
+		try {
+			const roomId = req.params.id;
+			const nlpEngine = req.nlpEngine._id;
+			await roomService.startBot(roomId, nlpEngine);
+			return ResponseSuccess(Constants.SUCCESS.START_BOT, null, res);
+		} catch (error) {
+			next(error);
+		}
+	}
 }
 
 module.exports = new RoomController();

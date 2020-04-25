@@ -10,10 +10,16 @@ exports.run = async (key) => {
     const isRoom = checkPatternRoom(key);
     if (isRoom) {
         try {
-            const [_$, roomId, nlpEngine] = key.split('_');
+            const [_$, roomId, botUserId, nlpEngine] = key.split('_');
             if (!roomId || !nlpEngine) {
                 return;
             }
+
+            const isStoppedBot = await messageService.checkBotHasStop(botUserId, nlpEngine);
+            if (isStoppedBot) {
+                return;
+            }
+
             const suggestions = await messageService.getSuggestionRedis(roomId, nlpEngine);
             if (typeof suggestions === 'object') {
                 const content = _.get(suggestions, 'responses[0].channelResponses', []);

@@ -10,17 +10,22 @@ exports.initEvent = (socket) => {
             const type = data.type;
             switch (type) {
                 case Constants.EVENT_TYPE.SEND_MESSAGE: {
-                    const { content, roomId } = data.payload;
+                    const {
+                        roomId,
+                        intents,
+                        entities,
+                        responses,
+                    } = data.payload;
                     const agentId = socket.user._id;
                     const nlpEngine = socket.nlpEngine._id;
-                    await increaseTimer(roomId, nlpEngine);
                     const { message, room } = await messageService.sendAgentMessage({
-                        content,
                         roomId,
                         agentId,
                         nlpEngine,
+                        content: responses,
                     });
-                    await removeTimer(roomId, nlpEngine);
+                    const botUserId = _.get(room, 'botUser._id', '').toString();
+                    await removeTimer(roomId, botUserId, nlpEngine);
                     const dataEmit = {
                         type: Constants.EVENT_TYPE.LAST_MESSAGE_AGENT,
                         payload: {
@@ -34,7 +39,9 @@ exports.initEvent = (socket) => {
                     );
                     await messageService.sendToBot({
                         room,
-                        responses: message.content,
+                        intents,
+                        entities,
+                        responses,
                     });
                     return callback(null, message);
                 }
@@ -49,16 +56,7 @@ exports.initEvent = (socket) => {
     });
 };
 
-function removeTimer(roomId, nlpEngine) {
-    const key = `${Constants.REDIS.PREFIX.ROOM}${roomId}_${nlpEngine}`;
+function removeTimer(roomId, botUserId, nlpEngine) {
+    const key = `${Constants.REDIS.PREFIX.ROOM}${roomId}_${botUserId}_${nlpEngine}`;
     return delFromRedis(key);
-}
-
-function increaseTimer(roomId, nlpEngine) {
-    const key = `${Constants.REDIS.PREFIX.ROOM}${roomId}_${nlpEngine}`;
-    return setExToRedis(
-        key,
-        parseInt(Constants.REDIS.ROOM.EXPIRE_TIME / 1000),
-        true
-    );
 }

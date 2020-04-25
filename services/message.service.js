@@ -10,6 +10,8 @@ const {
 	hmSetToRedis,
 	setExToRedis,
 	hmGetFromRedis,
+	delFromRedis,
+	getFromRedis,
 } = require('../services/redis.service');
 const { sendMessage } = require('../services/socket-emitter.service');
 
@@ -18,11 +20,11 @@ class MessageService {
 		const room = await getRoom({ botUser, nlpEngine, channel });
 		const roomID = room._id;
 		const message = await this.create({
-			roomID,
 			content,
 			channel,
 			botUser,
 			nlpEngine,
+			room: roomID,
 		});
 
 		const unreadMessages = (room.unreadMessages || 0) + 1;
@@ -36,16 +38,21 @@ class MessageService {
 			},
 		});
 
-		await setExToRedis(
-			`${Constants.REDIS.PREFIX.ROOM}${roomID}_${nlpEngine}`,
-			parseInt(Constants.REDIS.ROOM.EXPIRE_TIME / 1000),
-			true,
+		await setTimeoutRepsonse(roomID, botUser, nlpEngine);
+
+		const isStoppedBot = await this.checkBotHasStop(
+			botUser.toString(),
+			nlpEngine.toString()
 		);
 
-		const expiredTime = new Date().getTime() + Constants.REDIS.ROOM.EXPIRE_TIME;
+		let expiredTime = new Date().getTime() + Constants.REDIS.ROOM.EXPIRE_TIME;
+		if (isStoppedBot) {
+			expiredTime = 0;
+		}
 		return {
 			room: {
 				...room,
+				unreadMessages,
 				ttl: expiredTime,
 			},
 			message: message.toObject(),
@@ -88,6 +95,10 @@ class MessageService {
 	}
 
 	async sendAgentMessage({ agentId, roomId, content, nlpEngine }) {
+		let validContent = content;
+		if (typeof validContent === 'object') {
+			validContent = JSON.stringify(content);
+		}
 		const room = await roomRepository.getOne({
 			where: {
 				nlpEngine,
@@ -101,11 +112,11 @@ class MessageService {
 			throw new Error(Constants.ERROR.ROOM_NOT_FOUND);
 		}
 		const message = await messageRepository.create({
-			content,
 			nlpEngine,
 			room: roomId,
 			agent: agentId,
 			channel: room.channel,
+			content: validContent,
 		});
 
 		room.lastMessage = message._id;
@@ -118,10 +129,13 @@ class MessageService {
 	}
 
 	async sendBotMessage({ roomId, content, nlpEngine }) {
-		const room = await roomRepository.getOne({
+		const room = await roomRepository.getOneAndUpdate({
 			where: {
 				nlpEngine,
 				_id: roomId,
+			},
+			data: {
+				unreadMessages: 0,
 			},
 			fields: '_id channel lastMessage botUser agents nlpEngine',
 			isLean: false,
@@ -180,7 +194,8 @@ class MessageService {
 		const nlpEngine = _.get(room, 'nlpEngine', '').toString();
 		const roomId = room._id.toString();
 		const channel = room.channel;
-		// TODO: change format message
+
+
 		let validResponses = responses;
 		if (!_.isArray(responses)) {
 			validResponses = [responses];
@@ -191,6 +206,7 @@ class MessageService {
 			intents: oldIntents,
 			entities: oldEntities,
 		} = await this.getSuggestionRedis(roomId, nlpEngine);
+		await removeSuggestions(roomId, nlpEngine);
 
 		const url = `${process.env.NLP_SERVER}/api/v1/agents/messages`;
 		await axios.post(url, {
@@ -208,7 +224,6 @@ class MessageService {
 				engineid: nlpEngine,
 			},
 		});
-		await removeSuggestions(roomId, nlpEngine);
 	}
 
 	async getSuggestionRedis(roomId, nlpEngine) {
@@ -224,6 +239,36 @@ class MessageService {
 		} catch (error) {
 		}
 		return {};
+	}
+
+	setStopBot(botUserId, nlpEngine) {
+		const stopPrefix = `${Constants.REDIS.PREFIX.STOP_BOT}${botUserId}_${nlpEngine}`;
+
+		const stopStatus = {
+			isStopped: true,
+		};
+		return setExToRedis(
+			stopPrefix,
+			Constants.REDIS.ROOM.STOP_TIME / 1000,
+			JSON.stringify(stopStatus)
+		);
+	}
+
+	unsetStopBot(botUserId, nlpEngine) {
+		const stopPrefix = `${Constants.REDIS.PREFIX.STOP_BOT}${botUserId}_${nlpEngine}`;
+		return delFromRedis(stopPrefix);
+	}
+
+	async checkBotHasStop(botUserId, nlpEngine) {
+		const key = `${Constants.REDIS.PREFIX.STOP_BOT}${botUserId}_${nlpEngine}`;
+		let dataStopBot = await getFromRedis(key);
+		try {
+			dataStopBot = JSON.parse(dataStopBot);
+			if (typeof dataStopBot === 'object') {
+				return dataStopBot.isStopped;
+			}
+		} catch (error) { }
+		return false;
 	}
 }
 
@@ -248,6 +293,14 @@ function getRoom({ botUser, nlpEngine, channel }) {
 
 function removeSuggestions(roomId, nlpEngine) {
 	return hmSetToRedis(nlpEngine, roomId, '');
+}
+
+function setTimeoutRepsonse(roomId, botUserId, nlpEngine) {
+	return setExToRedis(
+		`${Constants.REDIS.PREFIX.ROOM}${roomId}_${botUserId}_${nlpEngine}`,
+		parseInt(Constants.REDIS.ROOM.EXPIRE_TIME / 1000),
+		true,
+	);
 }
 
 module.exports = new MessageService();

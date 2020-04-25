@@ -7,8 +7,11 @@ const {
 const Constants = require('../common/constants');
 const messageService = require('./message.service');
 const usersService = require('./users.service');
-const { hmGetFromRedis } = require('../services/redis.service');
-const { getTtlRedis } = require('./redis.service');
+const {
+	getTtlRedis,
+	getMultiKey,
+	getFromRedis,
+} = require('./redis.service');
 
 class RoomService {
 	async getUnassignedRooms({ page, limit, search, nlpEngine }) {
@@ -27,7 +30,7 @@ class RoomService {
 			condition['botUser.username'] = new RegExp(search, 'gi');
 		}
 		const rooms = await getRooms(condition, page, limit);
-		return await getRoomTimers(rooms, nlpEngine);
+		return await getRoomWithConfig(rooms, nlpEngine);
 	}
 
 	getAssignedRooms({ page, limit, agentId, nlpEngine, search }) {
@@ -61,7 +64,7 @@ class RoomService {
 			condition['botUser.username'] = new RegExp(search, 'gi');
 		}
 		const rooms = await getRooms(condition, page, limit);
-		return await getRoomTimers(rooms, nlpEngine);
+		return await getRoomWithConfig(rooms, nlpEngine);
 	}
 
 	async joinRoom({ roomID, agentID, nlpEngine, adminID }) {
@@ -140,7 +143,7 @@ class RoomService {
 	}
 
 	async getRoom({ roomId, agentId }) {
-		const room = await roomRepository.getOne({
+		let room = await roomRepository.getOne({
 			where: {
 				_id: roomId,
 				agents: [agentId],
@@ -151,8 +154,17 @@ class RoomService {
 				select: 'content',
 			},
 		});
-		const botUser = await getBotUserByUserId(roomId);
 		const nlpEngine = room.nlpEngine.toString();
+		room = await getRoomWithStopFlag(room, nlpEngine);
+		const botUser = await getBotUserByUserId(roomId);
+		if (room.isStopped) {
+			return {
+				...room,
+				suggestions: {},
+				botUser,
+			};
+		}
+
 		const suggestions = await messageService.getSuggestionRedis(roomId, nlpEngine);
 		return {
 			...room,
@@ -176,6 +188,38 @@ class RoomService {
 		};
 
 		return await roomRepository.getOneAndUpdate(options);
+	}
+
+	async stopBot(roomId, nlpEngine) {
+		const room = await roomRepository.getOne({
+			where: {
+				nlpEngine,
+				_id: roomId,
+			},
+			fields: 'botUser',
+		});
+		if (!room) {
+			throw new Error(Constants.ERROR.ROOM_NOT_FOUND);
+		}
+		const botUser = room.botUser;
+		const botUserId = botUser._id.toString();
+		return messageService.setStopBot(botUserId, nlpEngine);
+	}
+
+	async startBot(roomId, nlpEngine) {
+		const room = await roomRepository.getOne({
+			where: {
+				nlpEngine,
+				_id: roomId,
+			},
+			fields: 'botUser',
+		});
+		if (!room) {
+			throw new Error(Constants.ERROR.ROOM_NOT_FOUND);
+		}
+		const botUser = room.botUser;
+		const botUserId = botUser._id.toString();
+		return messageService.unsetStopBot(botUserId, nlpEngine);
 	}
 }
 
@@ -205,7 +249,7 @@ async function getBotUserByUserId(roomID) {
 		fields: 'botUser',
 	};
 	const room = await roomRepository.getOne(option);
-	const userId = room.botUser._id;
+	const userId = room.botUser._id.toString();
 	const url = `${process.env.NLP_SERVER}/v1/bot/users/${userId}`;
 	const res = await axios.get(url, {
 		headers: { authorization: process.env.SERVER_API_KEY }
@@ -246,11 +290,17 @@ async function createTags(tags, nlpEngine) {
 	return [...existingTags, ...tagsCreated];
 }
 
-async function getRoomTimers(rooms, nlpEngine) {
+async function getRoomWithConfig(rooms, nlpEngine) {
+	let validRooms = await getRoomsWithTimer(rooms, nlpEngine);
+	return await getRoomsWithStopFlag(validRooms, nlpEngine);
+}
+
+async function getRoomsWithTimer(rooms, nlpEngine) {
 	const nlpEngineStr = nlpEngine.toString();
 	const keys = rooms.map(room => {
 		const id = room._id.toString();
-		return `${Constants.REDIS.PREFIX.ROOM}${id}_${nlpEngineStr}`;
+		const botUserId = _.get(room, 'botUser._id', '').toString();
+		return `${Constants.REDIS.PREFIX.ROOM}${id}_${botUserId}_${nlpEngineStr}`;
 	});
 	const ttls = await getTtlRedis(keys);
 	const now = new Date().getTime();
@@ -260,4 +310,47 @@ async function getRoomTimers(rooms, nlpEngine) {
 			ttl: now + ttls[i] * 1000,
 		};
 	});
+}
+
+async function getRoomsWithStopFlag(rooms, nlpEngine) {
+	const nlpEngineStr = nlpEngine.toString();
+	const keys = rooms.map(room => {
+		const botUserId = _.get(room, 'botUser._id', '').toString();
+		return `${Constants.REDIS.PREFIX.STOP_BOT}${botUserId}_${nlpEngineStr}`;
+	});
+	const data = await getMultiKey(keys);
+	return rooms.map((room, i) => {
+		const stopFlag = convertDataRedis(data[i]);
+		return {
+			...room,
+			isStopped: stopFlag.isStopped,
+		};
+	});
+}
+
+async function getRoomWithStopFlag(room, nlpEngine) {
+	const nlpEngineStr = nlpEngine.toString();
+	const botUserId = _.get(room, 'botUser._id', '').toString();
+	const key = `${Constants.REDIS.PREFIX.STOP_BOT}${botUserId}_${nlpEngineStr}`;
+	const data = await getFromRedis(key);
+	const stopFlag = convertDataRedis(data);
+	return {
+		...room,
+		isStopped: stopFlag.isStopped,
+	};
+}
+
+function convertDataRedis(dataRedis) {
+	if (!dataRedis) {
+		return {};
+	}
+	let data = dataRedis;
+	try {
+		data = JSON.parse(data);
+		if (typeof data === 'object') {
+			return data;
+		}
+	} catch (error) {
+	}
+	return {};
 }

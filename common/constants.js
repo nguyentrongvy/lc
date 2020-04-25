@@ -24,6 +24,8 @@ const constants = {
 		GET_ROOMS: 'GET_ROOM_SUCCESS',
 		GET_TAGS: 'GET_TAG_SUCCESS',
 		UPDATE_ROOM_SUCCESS: 'UPDATE_ROOM_SUCCESS',
+		STOP_BOT: 'STOP_BOT_SUCCESS',
+		START_BOT: 'START_BOT_SUCCESS',
 	},
 	REGEX: {
 		OBJECT_ID: /^(?=[a-f\d]{24}$)(\d+[a-f]|[a-f]+\d)/i,
@@ -49,9 +51,11 @@ const constants = {
 	REDIS: {
 		PREFIX: {
 			ROOM: 'room_',
+			STOP_BOT: 'stoppedBot_',
 		},
 		ROOM: {
 			EXPIRE_TIME: 15 * 1000, // ms
+			STOP_TIME: 60 * 60 * 24 * 1000, // ms
 		},
 	},
 };

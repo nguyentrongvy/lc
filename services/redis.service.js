@@ -39,7 +39,20 @@ const getTtlRedis = keys => {
             resolve(ttls);
         });
     });
-}
+};
+
+const getMultiKey = keys => {
+    return new Promise((resolve, reject) => {
+        const multi = client.multi();
+        keys.forEach(key => multi.get(key));
+        multi.exec((error, data) => {
+            if (error) {
+                return reject(error);
+            }
+            resolve(data);
+        });
+    });
+};
 
 module.exports = {
     client,
@@ -51,5 +64,6 @@ module.exports = {
     hmGetFromRedis,
     hGetAllFromRedis,
     getTtlRedis,
+    getMultiKey,
     notifyExpiredKey,
 };
