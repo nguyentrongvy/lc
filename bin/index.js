@@ -1,5 +1,6 @@
 const fs = require('fs');
 const dotenv = require('dotenv');
+const path = require('path');
 // load process env
 const projectPath = path.resolve('..');
 if (fs.existsSync(path.resolve(projectPath, '../configs/.env'))) {
