@@ -13,10 +13,9 @@ module.exports = (settings) => {
 	const corsHeaders = settings.cors;
 
 	const app = express();
-	const env = process.env.ENV || 'dev';
 
 	app.use(helmet());
-	app.use(morgan(env));
+	app.use(morgan('dev'));
 	app.use(compression());
 	app.use(cors(corsHeaders));
 	app.options('*', cors(corsHeaders));
