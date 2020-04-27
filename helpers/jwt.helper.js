@@ -1,4 +1,3 @@
-// import key
 const jwt = require('jsonwebtoken');
 const {
 	serverSettings: {
@@ -11,7 +10,6 @@ const {
 	},
 } = require('../configs');
 
-// sign key
 exports.generateToken = (data, options = {}) => {
 	options = {
 		algorithm,
@@ -21,7 +19,6 @@ exports.generateToken = (data, options = {}) => {
 	return token;
 };
 
-// verify key
 exports.verifyToken = (token, options = {}) => {
 	const verifiedData = jwt.verify(token, publicKey, options);
 	return verifiedData;

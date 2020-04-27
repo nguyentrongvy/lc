@@ -1,4 +1,12 @@
-require('dotenv').config();
+const fs = require('fs');
+const dotenv = require('dotenv');
+// load process env
+const projectPath = path.resolve('..');
+if (fs.existsSync(path.resolve(projectPath, '../configs/.env'))) {
+	dotenv.config({ path: path.resolve(projectPath, '../configs/.env') });
+} else {
+	dotenv.config({ path: path.resolve(projectPath, '.env') })
+}
 
 const { dbSettings, serverSettings } = require('../configs');
 const models = require('../models');
