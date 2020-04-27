@@ -148,7 +148,7 @@ class RoomService {
 				nlpEngine,
 				_id: roomId,
 			},
-			fields: 'botUser channel note tags nlpEngine unreadMessages',
+			fields: 'botUser channel note tags nlpEngine unreadMessages agents',
 			populate: {
 				path: 'tags',
 				select: 'content',
@@ -240,7 +240,7 @@ function getRooms(condition, page, limit) {
 		page,
 		limit,
 		where: condition,
-		fields: 'botUser lastMessage channel unreadMessages',
+		fields: 'botUser lastMessage channel unreadMessages agents',
 		populate: {
 			path: 'lastMessage',
 			select: 'content createdAt botUser agent',
