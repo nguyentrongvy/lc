@@ -3,6 +3,7 @@ const axios = require('axios');
 const { delFromRedis, setExToRedis } = require('../services/redis.service');
 const Constants = require('../common/constants');
 const messageService = require('../services/message.service');
+const roomService = require('../services/room.service');
 
 exports.initEvent = (socket) => {
     socket.on(Constants.EVENT.CHAT, async (data = {}, callback) => {
@@ -44,6 +45,14 @@ exports.initEvent = (socket) => {
                         responses,
                     });
                     return callback(null, message);
+                }
+                case Constants.EVENT_TYPE.FOCUS_INPUT: {
+                    const { roomId } = data.payload;
+                    const nlpEngine = socket.nlpEngine._id;
+                    const unreadMessages = 0;
+                    const room = await roomService.updateRoomById({ nlpEngine, roomId, unreadMessages });
+
+                    return callback(null, room);
                 }
                 default: {
                     return callback();

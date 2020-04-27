@@ -148,7 +148,7 @@ class RoomService {
 				_id: roomId,
 				agents: [agentId],
 			},
-			fields: 'botUser channel note tags nlpEngine',
+			fields: 'botUser channel note tags nlpEngine unreadMessages',
 			populate: {
 				path: 'tags',
 				select: 'content',
@@ -173,17 +173,24 @@ class RoomService {
 		};
 	}
 
-	async updateRoomById({ roomId, tags, note, nlpEngine }) {
+	async updateRoomById({ roomId, tags, note, nlpEngine, unreadMessages }) {
 		const tagsCreated = await createTags(tags, nlpEngine);
 		const tagsId = tagsCreated.map(tag => tag._id);
+		const data = {};
+		if (tags) {
+			data.tags = tagsId;
+		}
+		if (note) {
+			data.note = note;
+		}
+		if (unreadMessages || unreadMessages == 0) {
+			data.unreadMessages = unreadMessages;
+		}
 		const options = {
 			where: {
 				_id: roomId,
 			},
-			data: {
-				tags: tagsId,
-				note: note,
-			},
+			data,
 			fields: "tags note",
 		};
 
