@@ -124,9 +124,27 @@ class RoomController {
 		try {
 			const roomId = req.params.id;
 			const nlpEngine = req.nlpEngine._id;
-			const { tags, note, unreadMessages } = req.body;
-			const room = await roomService.updateRoomById({ roomId, tags, note, nlpEngine, unreadMessages });
-			return ResponseSuccess(Constants.SUCCESS.UPDATE_ROOM_SUCCESS, room, res);
+			const {
+				tags,
+				note,
+				unreadMessages,
+				botUserId,
+				name,
+				phoneNumber,
+				address,
+			} = req.body;
+			const data = await roomService.updateRoomById({
+				tags,
+				note,
+				unreadMessages,
+				botUserId,
+				name,
+				phoneNumber,
+				address,
+				roomId,
+				nlpEngine,
+			});
+			return ResponseSuccess(Constants.SUCCESS.UPDATE_ROOM_SUCCESS, data, res);
 		} catch (error) {
 			next(error);
 		}

@@ -175,16 +175,14 @@ class RoomService {
 		};
 	}
 
-	async updateRoomById({ roomId, tags, note, nlpEngine, unreadMessages }) {
+	async updateRoomById({ roomId, tags, note, nlpEngine, unreadMessages, botUserId, name, phoneNumber, address }) {
 		const tagsCreated = await createTags(tags, nlpEngine);
 		const tagsId = tagsCreated.map(tag => tag._id);
-		const data = {};
-		if (tags) {
-			data.tags = tagsId;
-		}
-		if (note) {
-			data.note = note;
-		}
+		const data = {
+			'tags': tagsId || [],
+			'note': note || '',
+			'botUser.username': name || '',
+		};
 		if (unreadMessages || unreadMessages == 0) {
 			data.unreadMessages = unreadMessages;
 		}
@@ -195,6 +193,9 @@ class RoomService {
 			data,
 			fields: "tags note",
 		};
+
+		// TODO: update botUser
+		await updateBotUserId({ botUserId, name, phoneNumber, address });
 
 		return await roomRepository.getOneAndUpdate(options);
 	}
@@ -267,6 +268,34 @@ async function getBotUserByUserId(roomID) {
 	const botUser = _.get(res, 'data.data', '');
 
 	return botUser;
+}
+
+async function updateBotUserId({ botUserId, name, phoneNumber, address }) {
+	try {
+		const data = {
+			name,
+			phoneNumber,
+			address,
+		};
+		const url = `${process.env.NLP_SERVER}/v1/bot/users/${botUserId}`;
+		const headers = {
+			headers: { authorization: process.env.SERVER_API_KEY }
+		};
+		const res = await axios.put(
+			url,
+			data,
+			headers,
+		);
+		const botUser = _.get(res, 'data.data', '');
+		return {
+			name: botUser.name,
+			phoneNumber: botUser.phoneNumber,
+			address: botUser.address,
+			_id: botUser._id,
+		}
+	} catch (err) {
+		console.error(err);
+	}
 }
 
 async function createTags(tags, nlpEngine) {
