@@ -19,12 +19,14 @@ class MessageService {
 	async sendMessage({ botUser, nlpEngine, content, channel }) {
 		const room = await getRoom({ botUser, nlpEngine, channel });
 		const roomID = room._id;
+
+		const validContent = convertContent(content);
 		const message = await this.create({
-			content,
 			channel,
 			botUser,
 			nlpEngine,
 			room: roomID,
+			content: validContent,
 		});
 
 		const unreadMessages = (room.unreadMessages || 0) + 1;
@@ -301,6 +303,17 @@ function setTimeoutRepsonse(roomId, botUserId, nlpEngine) {
 		parseInt(Constants.REDIS.ROOM.EXPIRE_TIME / 1000),
 		true,
 	);
+}
+
+function convertContent(content) {
+	let message = content;
+	try {
+		const messageObj = JSON.parse(content);
+		if (typeof messageObj === 'object') {
+			return messageObj.title || '';
+		}
+	} catch (error) {}
+	return message;
 }
 
 module.exports = new MessageService();

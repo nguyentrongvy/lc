@@ -142,11 +142,11 @@ class RoomService {
 		return room;
 	}
 
-	async getRoom({ roomId, agentId }) {
+	async getRoom({ roomId, nlpEngine }) {
 		let room = await roomRepository.getOne({
 			where: {
+				nlpEngine,
 				_id: roomId,
-				agents: [agentId],
 			},
 			fields: 'botUser channel note tags nlpEngine unreadMessages',
 			populate: {
@@ -154,7 +154,9 @@ class RoomService {
 				select: 'content',
 			},
 		});
-		const nlpEngine = room.nlpEngine.toString();
+		if (!room) {
+			throw new Error(Constants.ERROR.ROOM_NOT_FOUND);
+		}
 		room = await getRoomWithStopFlag(room, nlpEngine);
 		const botUser = await getBotUserByUserId(roomId);
 		if (room.isStopped) {

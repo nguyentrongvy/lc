@@ -112,8 +112,8 @@ class RoomController {
 	async getRoom(req, res, next) {
 		try {
 			const roomId = req.params.id;
-			const agentId = req.user._id;
-			const data = await roomService.getRoom({ roomId, agentId });
+			const nlpEngine = req.nlpEngine._id;
+			const data = await roomService.getRoom({ roomId, nlpEngine });
 			return ResponseSuccess(Constants.SUCCESS.GET_ROOM, data, res);
 		} catch (error) {
 			next(error);
