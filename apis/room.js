@@ -88,8 +88,17 @@ exports.load = (app) => {
 	app.put(
 		'/api/v1/rooms/:id',
 		[
+			validate(commonValidation.paramId()),
 			authMiddleware.verifyToken,
 		],
 		roomController.updateRoomById,
 	);
+
+	app.get(
+		'/api/v1/rooms/unassigned/count',
+		[
+			authMiddleware.verifyToken,
+		],
+		roomController.countUnassignedRooms
+	)
 };

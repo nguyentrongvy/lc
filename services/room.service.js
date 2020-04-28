@@ -231,6 +231,20 @@ class RoomService {
 		const botUserId = botUser._id.toString();
 		return messageService.unsetStopBot(botUserId, nlpEngine);
 	}
+
+	countUnassignedRooms(nlpEngine) {
+		return roomRepository.count({
+			nlpEngine,
+			$or: [
+				{
+					agents: {
+						$size: 0,
+					}
+				},
+				{ agents: null },
+			],
+		});
+	}
 }
 
 module.exports = new RoomService();

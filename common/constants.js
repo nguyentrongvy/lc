@@ -26,6 +26,7 @@ const constants = {
 		UPDATE_ROOM_SUCCESS: 'UPDATE_ROOM_SUCCESS',
 		STOP_BOT: 'STOP_BOT_SUCCESS',
 		START_BOT: 'START_BOT_SUCCESS',
+		COUNT_ROOMS: 'COUNT_ROOMS_SUCCESS',
 	},
 	REGEX: {
 		OBJECT_ID: /^(?=[a-f\d]{24}$)(\d+[a-f]|[a-f]+\d)/i,

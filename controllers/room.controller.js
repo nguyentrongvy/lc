@@ -171,6 +171,16 @@ class RoomController {
 			next(error);
 		}
 	}
+
+	async countUnassignedRooms(req, res, next) {
+		try {
+			const nlpEngine = req.nlpEngine._id;
+			const count = await roomService.countUnassignedRooms(nlpEngine);
+			return ResponseSuccess(Constants.SUCCESS.COUNT_ROOMS, count, res);
+		} catch (error) {
+			next(error);
+		}
+	}
 }
 
 module.exports = new RoomController();
