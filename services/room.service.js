@@ -175,7 +175,7 @@ class RoomService {
 		};
 	}
 
-	async updateRoomById({ roomId, tags, note, nlpEngine, unreadMessages, botUserId, name, phoneNumber, address }) {
+	async updateRoomById({ roomId, tags, note, nlpEngine, botUserId, name, phoneNumber, address }) {
 		const tagsCreated = await createTags(tags, nlpEngine);
 		const tagsId = tagsCreated.map(tag => tag._id);
 		const data = {
@@ -183,9 +183,6 @@ class RoomService {
 			'note': note || '',
 			'botUser.username': name || '',
 		};
-		if (unreadMessages || unreadMessages == 0) {
-			data.unreadMessages = unreadMessages;
-		}
 		const options = {
 			where: {
 				_id: roomId,
@@ -196,6 +193,20 @@ class RoomService {
 
 		// TODO: update botUser
 		await updateBotUserId({ botUserId, name, phoneNumber, address });
+
+		return await roomRepository.getOneAndUpdate(options);
+	}
+
+	async updateUnreadMessages({ roomId, unreadMessages }) {
+		const options = {
+			where: {
+				_id: roomId,
+			},
+			data: {
+				unreadMessages: unreadMessages
+			},
+			fields: "tags note",
+		};
 
 		return await roomRepository.getOneAndUpdate(options);
 	}

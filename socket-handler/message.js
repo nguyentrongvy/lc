@@ -48,9 +48,8 @@ exports.initEvent = (socket) => {
                 }
                 case Constants.EVENT_TYPE.FOCUS_INPUT: {
                     const { roomId } = data.payload;
-                    const nlpEngine = socket.nlpEngine._id;
                     const unreadMessages = 0;
-                    const room = await roomService.updateRoomById({ nlpEngine, roomId, unreadMessages });
+                    const room = await roomService.updateUnreadMessages({ roomId, unreadMessages });
 
                     return callback(null, room);
                 }

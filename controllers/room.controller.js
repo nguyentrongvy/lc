@@ -127,7 +127,6 @@ class RoomController {
 			const {
 				tags,
 				note,
-				unreadMessages,
 				botUserId,
 				name,
 				phoneNumber,
@@ -136,7 +135,6 @@ class RoomController {
 			const data = await roomService.updateRoomById({
 				tags,
 				note,
-				unreadMessages,
 				botUserId,
 				name,
 				phoneNumber,
