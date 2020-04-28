@@ -323,8 +323,6 @@ async function createTags(tags, nlpEngine) {
 		},
 		fields: "content",
 	});
-	if (!existingTags || existingTags.length == 0) return tagsUnique;
-
 	const tagsNew = tagsUnique.reduce((initValue, currentValue) => {
 		const exist = existingTags.some(tag => tag.content == currentValue.content);
 		if (!exist) {
