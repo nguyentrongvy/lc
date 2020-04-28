@@ -49,6 +49,7 @@ const constants = {
 		SEND_UNASSIGNED_CHAT: 'unassigned_chat',
 		SEND_USER_MESSAGE: 'user_message',
 		FOCUS_INPUT: 'focus',
+		CLEAR_TIMER: 'clear_timer',
 	},
 	REDIS: {
 		PREFIX: {

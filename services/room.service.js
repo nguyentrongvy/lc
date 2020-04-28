@@ -226,7 +226,7 @@ class RoomService {
 		}
 		const botUser = room.botUser;
 		const botUserId = botUser._id.toString();
-		return messageService.setStopBot(botUserId, nlpEngine);
+		return messageService.setStopBot(roomId, botUserId, nlpEngine);
 	}
 
 	async startBot(roomId, nlpEngine) {

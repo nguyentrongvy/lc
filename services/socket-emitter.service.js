@@ -44,3 +44,14 @@ exports.sendBotMessage = (agentId, dataEmit) => {
     }
     socketEmitter.to(agentId.toString()).emit(Constants.EVENT.CHAT, dataEmit);
 };
+
+exports.sendClearTimer = (roomId, nlpEngine) => {
+    const dataEmit = {
+        type: Constants.EVENT_TYPE.CLEAR_TIMER,
+        payload: { roomId },
+    };
+    socketEmitter.to(nlpEngine.toString()).emit(
+        Constants.EVENT.CHAT,
+        dataEmit,
+    );
+};

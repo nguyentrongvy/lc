@@ -13,19 +13,24 @@ const {
 	delFromRedis,
 	getFromRedis,
 } = require('../services/redis.service');
-const { sendMessage } = require('../services/socket-emitter.service');
+const {
+	sendMessage,
+	sendClearTimer,
+	sendBotMessage,
+} = require('../services/socket-emitter.service');
 
 class MessageService {
 	async sendMessage({ botUser, nlpEngine, content, channel }) {
 		const room = await getRoom({ botUser, nlpEngine, channel });
 		const roomID = room._id;
+		const botUserId = botUser._id;
 
 		const validContent = convertContent(content);
 		const message = await this.create({
 			channel,
-			botUser,
 			nlpEngine,
 			room: roomID,
+			botUser: botUserId,
 			content: validContent,
 		});
 
@@ -40,10 +45,10 @@ class MessageService {
 			},
 		});
 
-		await setTimeoutRepsonse(roomID, botUser, nlpEngine);
+		await this.setTimeoutRepsonse(roomID, botUser._id, nlpEngine);
 
 		const isStoppedBot = await this.checkBotHasStop(
-			botUser.toString(),
+			botUser._id.toString(),
 			nlpEngine.toString()
 		);
 
@@ -99,6 +104,9 @@ class MessageService {
 	async sendAgentMessage({ agentId, roomId, content, nlpEngine }) {
 		let validContent = content;
 		if (typeof validContent === 'object') {
+			if (_.isArray(validContent) && validContent.length === 0) {
+				return {};
+			}
 			validContent = JSON.stringify(content);
 		}
 		const room = await roomRepository.getOne({
@@ -169,13 +177,27 @@ class MessageService {
 		nlpEngine,
 	}) {
 		const roomId = room._id;
-		const dataStore = JSON.stringify({
-			intents,
-			entities,
-			responses,
-			text: message.content,
-		});
-		await hmSetToRedis(nlpEngine.toString(), roomId.toString(), dataStore);
+		const botUser = _.get(room, 'botUser._id', '').toString();
+
+		const suggestions = await this.getSuggestionRedis(roomId, nlpEngine);
+		if (
+			typeof suggestions === 'object'
+			&& 'responses' in suggestions
+			&& !!botUser
+		) {
+			await this.sendMessageAuto({ suggestions, roomId, nlpEngine });
+		}
+
+		if (intents && intents.length > 0) {
+			const dataStore = JSON.stringify({
+				intents,
+				entities,
+				responses,
+				text: message.content,
+			});
+			await hmSetToRedis(nlpEngine.toString(), roomId.toString(), dataStore);
+		}
+
 		sendMessage({
 			room,
 			message,
@@ -243,12 +265,17 @@ class MessageService {
 		return {};
 	}
 
-	setStopBot(botUserId, nlpEngine) {
+	async setStopBot(roomId, botUserId, nlpEngine) {
 		const stopPrefix = `${Constants.REDIS.PREFIX.STOP_BOT}${botUserId}_${nlpEngine}`;
 
 		const stopStatus = {
 			isStopped: true,
 		};
+
+
+		await this.removeTimer(roomId, botUserId, nlpEngine);
+		sendClearTimer(roomId, nlpEngine);
+
 		return setExToRedis(
 			stopPrefix,
 			Constants.REDIS.ROOM.STOP_TIME / 1000,
@@ -272,6 +299,43 @@ class MessageService {
 		} catch (error) { }
 		return false;
 	}
+
+	removeTimer(roomId, botUserId, nlpEngine) {
+		const key = `${Constants.REDIS.PREFIX.ROOM}${roomId}_${botUserId}_${nlpEngine}`;
+		return delFromRedis(key);
+	}
+
+	async sendMessageAuto({ suggestions, roomId, nlpEngine }) {
+		const content = _.get(suggestions, 'responses[0].channelResponses', []);
+		const { room, message } = await this.sendBotMessage({
+			roomId,
+			nlpEngine,
+			content,
+		});
+		const dataEmit = {
+			type: Constants.EVENT_TYPE.LAST_MESSAGE_AGENT,
+			payload: {
+				message,
+				room,
+			},
+		};
+		await this.sendToBot({
+			room,
+			responses: content,
+		});
+		const agentId = _.get(room, 'agents[0]._id');
+		sendBotMessage(agentId, dataEmit);
+		await removeSuggestions(roomId, nlpEngine);
+	}
+
+	async setTimeoutRepsonse(roomId, botUserId, nlpEngine) {
+		await this.removeTimer(roomId, botUserId, nlpEngine);
+		return setExToRedis(
+			`${Constants.REDIS.PREFIX.ROOM}${roomId}_${botUserId}_${nlpEngine}`,
+			parseInt(Constants.REDIS.ROOM.EXPIRE_TIME / 1000),
+			true,
+		);
+	}
 }
 
 function getRoom({ botUser, nlpEngine, channel }) {
@@ -279,13 +343,13 @@ function getRoom({ botUser, nlpEngine, channel }) {
 		where: {
 			nlpEngine,
 			channel,
-			'botUser._id': botUser,
+			'botUser._id': botUser._id,
 		},
 		options: {
 			upsert: true,
 		},
 		data: {
-			'botUser.username': botUser.userName || Constants.CHAT_CONSTANTS.DEFAULT_NAME,
+			'botUser.username': botUser.name || Constants.CHAT_CONSTANTS.DEFAULT_NAME,
 		},
 		fields: '_id agents',
 	};
@@ -294,15 +358,7 @@ function getRoom({ botUser, nlpEngine, channel }) {
 }
 
 function removeSuggestions(roomId, nlpEngine) {
-	return hmSetToRedis(nlpEngine, roomId, '');
-}
-
-function setTimeoutRepsonse(roomId, botUserId, nlpEngine) {
-	return setExToRedis(
-		`${Constants.REDIS.PREFIX.ROOM}${roomId}_${botUserId}_${nlpEngine}`,
-		parseInt(Constants.REDIS.ROOM.EXPIRE_TIME / 1000),
-		true,
-	);
+	return hmSetToRedis(nlpEngine.toString(), roomId.toString(), '');
 }
 
 function convertContent(content) {
@@ -312,7 +368,7 @@ function convertContent(content) {
 		if (typeof messageObj === 'object') {
 			return messageObj.title || '';
 		}
-	} catch (error) {}
+	} catch (error) { }
 	return message;
 }
 

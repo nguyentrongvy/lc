@@ -3,7 +3,10 @@ const Constants = require('../common/constants');
 
 exports.sendMessage = () => ({
 	body: {
-		botUser: Joi.string().regex(Constants.REGEX.OBJECT_ID).required(),
+		botUser: Joi.object().keys({
+			name: Joi.string(),
+			_id: Joi.string().regex(Constants.REGEX.OBJECT_ID).required(),
+		}),
 		nlpEngine: Joi.string().regex(Constants.REGEX.OBJECT_ID).required(),
 		content: Joi.string().max(10000, 'utf8').required(),
 		channel: Joi.string().valid(...Object.values(Constants.CHANNEL)).required(),

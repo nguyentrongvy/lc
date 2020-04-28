@@ -1,7 +1,6 @@
 const validate = require('express-validation');
 
 const messageValidation = require('../validations/message.validation');
-const commonValidation = require('../validations/common.validation');
 const messageController = require('../controllers/message.controller');
 const authenMiddleware = require('../middlewares/authentication.middleware');
 

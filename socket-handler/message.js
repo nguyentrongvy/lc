@@ -19,14 +19,17 @@ exports.initEvent = (socket) => {
                     } = data.payload;
                     const agentId = socket.user._id;
                     const nlpEngine = socket.nlpEngine._id;
+                    await messageService.removeTimer(roomId, '*', nlpEngine);
                     const { message, room } = await messageService.sendAgentMessage({
                         roomId,
                         agentId,
                         nlpEngine,
                         content: responses,
                     });
+                    if (!message) { 
+                        return callback(new Error('Message is invalid'));
+                    }
                     const botUserId = _.get(room, 'botUser._id', '').toString();
-                    await removeTimer(roomId, botUserId, nlpEngine);
                     const dataEmit = {
                         type: Constants.EVENT_TYPE.LAST_MESSAGE_AGENT,
                         payload: {
@@ -63,8 +66,3 @@ exports.initEvent = (socket) => {
         }
     });
 };
-
-function removeTimer(roomId, botUserId, nlpEngine) {
-    const key = `${Constants.REDIS.PREFIX.ROOM}${roomId}_${botUserId}_${nlpEngine}`;
-    return delFromRedis(key);
-}
