@@ -60,6 +60,9 @@ const constants = {
 			STOP_TIME: 60 * 60 * 24 * 1000, // ms
 		},
 	},
+	CHAT_CONSTANTS: {
+		DEFAULT_NAME: 'guest',
+	}
 };
 
 module.exports = Object.freeze(constants);
