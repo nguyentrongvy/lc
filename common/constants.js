@@ -61,7 +61,7 @@ const constants = {
 		},
 	},
 	CHAT_CONSTANTS: {
-		DEFAULT_NAME: 'guest',
+		DEFAULT_NAME: 'Guest',
 	}
 };
 

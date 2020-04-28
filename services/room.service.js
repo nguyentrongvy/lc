@@ -27,11 +27,7 @@ class RoomService {
 			],
 		};
 		if (search) {
-			if (search.toLowerCase() == Constants.CHAT_CONSTANTS.DEFAULT_NAME) {
-				condition['botUser.username'] = '';
-			} else {
-				condition['botUser.username'] = new RegExp(search, 'gi');
-			}
+			condition['botUser.username'] = new RegExp(search, 'gi');
 		}
 		const rooms = await getRooms(condition, page, limit);
 		return await getRoomWithConfig(rooms, nlpEngine);
@@ -50,11 +46,7 @@ class RoomService {
 			},
 		};
 		if (search) {
-			if (search.toLowerCase() == Constants.CHAT_CONSTANTS.DEFAULT_NAME) {
-				condition['botUser.username'] = '';
-			} else {
-				condition['botUser.username'] = new RegExp(search, 'gi');
-			}
+			condition['botUser.username'] = new RegExp(search, 'gi');
 		}
 
 		return getRooms(condition, page, limit);
@@ -70,11 +62,7 @@ class RoomService {
 		};
 
 		if (search) {
-			if (search.toLowerCase() == Constants.CHAT_CONSTANTS.DEFAULT_NAME) {
-				condition['botUser.username'] = '';
-			} else {
-				condition['botUser.username'] = new RegExp(search, 'gi');
-			}
+			condition['botUser.username'] = new RegExp(search, 'gi');
 		}
 		const rooms = await getRooms(condition, page, limit);
 

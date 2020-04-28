@@ -285,7 +285,7 @@ function getRoom({ botUser, nlpEngine, channel }) {
 			upsert: true,
 		},
 		data: {
-			'botUser.username': botUser.userName || '',
+			'botUser.username': botUser.userName || Constants.CHAT_CONSTANTS.DEFAULT_NAME,
 		},
 		fields: '_id agents',
 	};
