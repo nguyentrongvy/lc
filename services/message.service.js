@@ -323,7 +323,7 @@ class MessageService {
 			room,
 			responses: content,
 		});
-		const agentId = _.get(room, 'agents[0]._id');
+		const agentId = _.get(room, 'agents[0]');
 		sendBotMessage(agentId, dataEmit);
 		await removeSuggestions(roomId, nlpEngine);
 	}
