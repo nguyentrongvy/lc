@@ -9,7 +9,7 @@ module.exports = class BaseRepository {
 		const newOptions = Object.assign({
 			isLean: true,
 			page: 1,
-			limit: 10,
+			limit: 20,
 			fields: '',
 			populate: [],
 			sort: ''
