@@ -14,7 +14,7 @@ const {
 } = require('./redis.service');
 
 class RoomService {
-	async getUnassignedRooms({ page, limit, search, nlpEngine }) {
+	async getUnassignedRooms({ page, limit, search, nlpEngine, flag }) {
 		const condition = {
 			nlpEngine,
 			$or: [
@@ -27,13 +27,17 @@ class RoomService {
 			],
 		};
 		if (search) {
-			condition['botUser.username'] = new RegExp(search, 'gi');
+			if (flag == Constants.FLAG.SEARCH_BY_ROOM_NAME) {
+				condition['botUser.username'] = new RegExp(search, 'gi');
+			} else {
+				condition['tags.content'] = new RegExp(search, 'gi');
+			}
 		}
 		const rooms = await getRooms(condition, page, limit);
 		return await getRoomWithConfig(rooms, nlpEngine);
 	}
 
-	getAssignedRooms({ page, limit, agentId, nlpEngine, search }) {
+	getAssignedRooms({ page, limit, agentId, nlpEngine, search, flag }) {
 		const condition = {
 			nlpEngine,
 			agents: {
@@ -45,14 +49,19 @@ class RoomService {
 				$gte: [{ $size: "$agents" }, 1],
 			},
 		};
+
 		if (search) {
-			condition['botUser.username'] = new RegExp(search, 'gi');
+			if (flag == Constants.FLAG.SEARCH_BY_ROOM_NAME) {
+				condition['botUser.username'] = new RegExp(search, 'gi');
+			} else {
+				condition['tags.content'] = new RegExp(search, 'gi');
+			}
 		}
 
 		return getRooms(condition, page, limit);
 	}
 
-	async getOwnRooms({ page, limit, agentId, nlpEngine, search }) {
+	async getOwnRooms({ page, limit, agentId, nlpEngine, search, flag }) {
 		const condition = {
 			nlpEngine,
 			agents: agentId,
@@ -62,7 +71,11 @@ class RoomService {
 		};
 
 		if (search) {
-			condition['botUser.username'] = new RegExp(search, 'gi');
+			if (flag == Constants.FLAG.SEARCH_BY_ROOM_NAME) {
+				condition['botUser.username'] = new RegExp(search, 'gi');
+			} else {
+				condition['tags.content'] = new RegExp(search, 'gi');
+			}
 		}
 		const rooms = await getRooms(condition, page, limit);
 
@@ -153,10 +166,6 @@ class RoomService {
 				_id: roomId,
 			},
 			fields: 'botUser channel note tags nlpEngine unreadMessages agents',
-			populate: {
-				path: 'tags',
-				select: 'content',
-			},
 		});
 		if (!room) {
 			throw new Error(Constants.ERROR.ROOM_NOT_FOUND);
@@ -181,9 +190,8 @@ class RoomService {
 
 	async updateRoomById({ roomId, tags, note, nlpEngine, botUserId, name, phoneNumber, address }) {
 		const tagsCreated = await createTags(tags, nlpEngine);
-		const tagsId = tagsCreated.map(tag => tag._id);
 		const data = {
-			'tags': tagsId || [],
+			'tags': tagsCreated || [],
 			'note': note || '',
 			'botUser.username': name || '',
 		};

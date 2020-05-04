@@ -6,12 +6,13 @@ class RoomController {
 	async getUnassignedRooms(req, res, next) {
 		try {
 			const nlpEngine = req.nlpEngine._id;
-			const { page, limit, search } = req.query;
+			const { page, limit, search, flag } = req.query;
 			const rooms = await roomService.getUnassignedRooms({
 				page,
 				limit,
 				nlpEngine,
 				search,
+				flag,
 			});
 			return ResponseSuccess(Constants.SUCCESS.GET_ROOMS, rooms, res);
 		} catch (error) {
@@ -23,13 +24,14 @@ class RoomController {
 		try {
 			const nlpEngine = req.nlpEngine._id;
 			const agentId = req.user._id;
-			const { page, limit, search } = req.query;
+			const { page, limit, search, flag } = req.query;
 			const rooms = await roomService.getAssignedRooms({
 				page,
 				limit,
 				agentId,
 				nlpEngine,
 				search,
+				flag,
 			});
 			return ResponseSuccess(Constants.SUCCESS.GET_ROOMS, rooms, res);
 		} catch (error) {
@@ -41,13 +43,14 @@ class RoomController {
 		try {
 			const nlpEngine = req.nlpEngine._id;
 			const agentId = req.user._id;
-			const { page, limit, search } = req.query;
+			const { page, limit, search, flag } = req.query;
 			const rooms = await roomService.getOwnRooms({
 				page,
 				limit,
 				agentId,
 				nlpEngine,
 				search,
+				flag,
 			});
 			return ResponseSuccess(Constants.SUCCESS.GET_ROOMS, rooms, res);
 		} catch (error) {

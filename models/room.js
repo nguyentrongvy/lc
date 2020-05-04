@@ -42,8 +42,11 @@ const roomSchema = new mongoose.Schema({
 		max: 10000,
 	},
 	tags: [{
-		type: mongoose.SchemaTypes.ObjectId,
-		ref: 'Tag',
+		_id: {
+			type: mongoose.SchemaTypes.ObjectId,
+			ref: 'Tag',
+		},
+		content: String,
 	}],
 	deletedAt: {
 		type: Date,

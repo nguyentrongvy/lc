@@ -63,6 +63,10 @@ const constants = {
 	},
 	CHAT_CONSTANTS: {
 		DEFAULT_NAME: 'Guest',
+	},
+	FLAG: {
+		SEARCH_BY_ROOM_NAME: 'search_by_room_name',
+		SEARCH_BY_TAGS: 'search_by_tags',
 	}
 };
 
