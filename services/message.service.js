@@ -179,13 +179,16 @@ class MessageService {
 		const roomId = room._id;
 		const botUser = _.get(room, 'botUser._id', '').toString();
 
-		const suggestions = await this.getSuggestionRedis(roomId, nlpEngine);
-		if (
-			typeof suggestions === 'object'
-			&& 'responses' in suggestions
-			&& !!botUser
-		) {
-			await this.sendMessageAuto({ suggestions, roomId, nlpEngine });
+		const isStoppedBot = await this.checkBotHasStop(botUser, nlpEngine);
+		if (!isStoppedBot) {
+			const suggestions = await this.getSuggestionRedis(roomId, nlpEngine);
+			if (
+				typeof suggestions === 'object'
+				&& 'responses' in suggestions
+				&& !!botUser
+			) {
+				await this.sendMessageAuto({ suggestions, roomId, nlpEngine });
+			}
 		}
 
 		if (intents && intents.length > 0) {
