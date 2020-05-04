@@ -123,7 +123,7 @@ class RoomService {
 			data: {
 				agents: [],
 			},
-			fields: 'channel',
+			fields: 'channel botUser',
 		};
 		const room = await roomRepository.getOneAndUpdate(options);
 		if (!room) {
@@ -141,6 +141,8 @@ class RoomService {
 			channel: room.channel,
 			room: roomID,
 		});
+		const botUserId = room.botUser._id.toString();
+		await messageService.unsetStopBot(botUserId, nlpEngine);
 		return room;
 	}
 
