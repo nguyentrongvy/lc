@@ -204,7 +204,7 @@ class RoomService {
 		};
 
 		// TODO: update botUser
-		await updateBotUserId({ botUserId, name, phoneNumber, address });
+		await updateBotUserId({ botUserId, name, phoneNumber, address, tagsCreated });
 
 		return await roomRepository.getOneAndUpdate(options);
 	}
@@ -307,12 +307,13 @@ async function getBotUserByUserId(roomID) {
 	return botUser;
 }
 
-async function updateBotUserId({ botUserId, name, phoneNumber, address }) {
+async function updateBotUserId({ botUserId, name, phoneNumber, address, tagsCreated }) {
 	try {
 		const data = {
 			name,
 			phoneNumber,
 			address,
+			tagsCreated,
 		};
 		const url = `${process.env.NLP_SERVER}/v1/bot/users/${botUserId}`;
 		const headers = {
