@@ -21,7 +21,7 @@ const {
 
 class MessageService {
 	async sendMessage({ botUser, nlpEngine, content, channel }) {
-		const room = await getRoom({ botUser, nlpEngine, channel });
+		const { isNew, room } = await getRoom({ botUser, nlpEngine, channel });
 		const roomID = room._id;
 		const botUserId = botUser._id;
 
@@ -57,6 +57,7 @@ class MessageService {
 			expiredTime = 0;
 		}
 		return {
+			isNew,
 			room: {
 				...room,
 				unreadMessages,
@@ -175,6 +176,7 @@ class MessageService {
 		entities,
 		responses,
 		nlpEngine,
+		isNew,
 	}) {
 		const roomId = room._id;
 		const botUser = _.get(room, 'botUser._id', '').toString();
@@ -208,6 +210,7 @@ class MessageService {
 			entities,
 			responses,
 			nlpEngine,
+			isNew,
 		});
 	}
 
@@ -326,8 +329,7 @@ class MessageService {
 			room,
 			responses: content,
 		});
-		const agentId = _.get(room, 'agents[0]');
-		sendBotMessage(agentId, dataEmit);
+		sendBotMessage(nlpEngine, dataEmit);
 		await removeSuggestions(roomId, nlpEngine);
 	}
 
@@ -341,23 +343,39 @@ class MessageService {
 	}
 }
 
-function getRoom({ botUser, nlpEngine, channel }) {
-	const options = {
-		where: {
-			nlpEngine,
-			channel,
-			'botUser._id': botUser._id,
-		},
-		options: {
-			upsert: true,
-		},
-		data: {
-			'botUser.username': botUser.name || Constants.CHAT_CONSTANTS.DEFAULT_NAME,
-		},
-		fields: '_id agents',
+async function getRoom({ botUser, nlpEngine, channel }) {
+	const condition = {
+		nlpEngine,
+		channel,
+		'botUser._id': botUser._id,
 	};
+	const existedRoom = await roomRepository.getOne({
+		where: condition,
+		fields: '_id agents',
+		isLean: false,
+	});
+	if (existedRoom) {
+		existedRoom.botUser.username = botUser.name || Constants.CHAT_CONSTANTS.DEFAULT_NAME;
+		await existedRoom.save();
+		return {
+			room: existedRoom.toObject(),
+			isNew: false,
+		};
+	}
 
-	return roomRepository.getOneAndUpdate(options);
+	const newRoom = await roomRepository.create({
+		nlpEngine,
+		channel,
+		botUser: {
+			_id: botUser._id,
+			username: botUser.name || Constants.CHAT_CONSTANTS.DEFAULT_NAME,
+		},
+	});
+
+	return {
+		room: newRoom.toObject(),
+		isNew: true,
+	};
 }
 
 function removeSuggestions(roomId, nlpEngine) {

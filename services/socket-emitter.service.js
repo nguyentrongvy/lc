@@ -10,6 +10,7 @@ exports.sendMessage = ({
     entities,
     responses,
     nlpEngine,
+    isNew,
 }) => {
     const agentId = _.get(room, 'agents[0]', '').toString();
     const payload = {
@@ -18,6 +19,7 @@ exports.sendMessage = ({
         intents,
         entities,
         responses,
+        isNew,
     };
     if (!agentId) {
         socketEmitter.to(nlpEngine).emit(
@@ -38,11 +40,11 @@ exports.sendMessage = ({
     }
 };
 
-exports.sendBotMessage = (agentId, dataEmit) => {
-    if (!agentId) {
+exports.sendBotMessage = (receiver, dataEmit) => {
+    if (!receiver) {
         return;
     }
-    socketEmitter.to(agentId.toString()).emit(Constants.EVENT.CHAT, dataEmit);
+    socketEmitter.to(receiver.toString()).emit(Constants.EVENT.CHAT, dataEmit);
 };
 
 exports.sendClearTimer = (roomId, nlpEngine) => {

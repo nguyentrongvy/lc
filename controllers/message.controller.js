@@ -14,7 +14,7 @@ class MessageControlelr {
 				entities,
 				responses,
 			} = req.body;
-			const { message, room } = await messageService.sendMessage({
+			const { message, room, isNew } = await messageService.sendMessage({
 				botUser,
 				nlpEngine,
 				content,
@@ -28,6 +28,7 @@ class MessageControlelr {
 				entities,
 				nlpEngine,
 				responses,
+				isNew,
 			});
 
 			return ResponseSuccess(Constants.SUCCESS.SEND_MESSAGE, message, res);
