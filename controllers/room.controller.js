@@ -63,12 +63,12 @@ class RoomController {
 			const roomID = req.params.id;
 			const agentID = req.user._id;
 			const nlpEngine = req.nlpEngine._id;
-			const room = await roomService.joinRoom({
+			const message = await roomService.joinRoom({
 				roomID,
 				agentID,
 				nlpEngine,
 			});
-			return ResponseSuccess(Constants.SUCCESS.JOIN_ROOM, room, res);
+			return ResponseSuccess(Constants.SUCCESS.JOIN_ROOM, message, res);
 		} catch (error) {
 			next(error);
 		}
@@ -82,13 +82,13 @@ class RoomController {
 			const {
 				agentID,
 			} = req.body;
-			const room = await roomService.joinRoom({
+			const message = await roomService.joinRoom({
 				roomID,
 				agentID,
 				nlpEngine,
 				adminID,
 			});
-			return ResponseSuccess(Constants.SUCCESS.JOIN_ROOM, room, res);
+			return ResponseSuccess(Constants.SUCCESS.JOIN_ROOM, message, res);
 		} catch (error) {
 			next(error);
 		}

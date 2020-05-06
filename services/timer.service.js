@@ -9,7 +9,7 @@ exports.run = async (key) => {
     const isRoom = checkPatternRoom(key);
     if (isRoom) {
         try {
-            const [_$, roomId, botUserId, nlpEngine] = key.split('_');
+            const [, roomId, botUserId, nlpEngine] = key.split('_');
             if (!roomId || !nlpEngine) {
                 return;
             }

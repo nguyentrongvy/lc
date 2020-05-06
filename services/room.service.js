@@ -7,6 +7,7 @@ const {
 const Constants = require('../common/constants');
 const messageService = require('./message.service');
 const usersService = require('./users.service');
+const { sendJoinRoom, sendLeftRoom } = require('./socket-emitter.service');
 const {
 	getTtlRedis,
 	getMultiKey,
@@ -115,7 +116,7 @@ class RoomService {
 			content = `${userNameAdmin} has assigned ${userName} to this room.`;
 		}
 		const action = Constants.ACTION.JOIN_ROOM;
-		await messageService.create({
+		const message = await messageService.create({
 			nlpEngine,
 			content,
 			action,
@@ -124,7 +125,8 @@ class RoomService {
 			channel: room.channel,
 		});
 
-		return room;
+		sendJoinRoom(nlpEngine, room);
+		return message;
 	}
 
 	async leftRoom({ roomID, agentID, nlpEngine }) {
@@ -156,6 +158,7 @@ class RoomService {
 		});
 		const botUserId = room.botUser._id.toString();
 		await messageService.unsetStopBot(botUserId, nlpEngine);
+		sendLeftRoom(nlpEngine);
 		return room;
 	}
 
@@ -273,7 +276,7 @@ class RoomService {
 module.exports = new RoomService();
 
 function getRooms(condition, page, limit) {
-	return roomRepository.getAll({
+	return roomRepository.getMany({
 		page,
 		limit,
 		where: condition,

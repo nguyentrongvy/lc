@@ -55,3 +55,36 @@ exports.sendClearTimer = (roomId, nlpEngine) => {
         dataEmit,
     );
 };
+
+exports.sendNotification = (nlpEngine, notification) => {
+    const dataEmit = {
+        type: Constants.EVENT_TYPE.SEND_NOTIFICATION,
+        payload: { notification },
+    };
+    socketEmitter.to(nlpEngine.toString()).emit(
+        Constants.EVENT.NOTIFICATION,
+        dataEmit,
+    );
+};
+
+exports.sendJoinRoom = (nlpEngine, room) => {
+    const dataEmit = {
+        type: Constants.EVENT_TYPE.JOIN_ROOM,
+        payload: { room },
+    };
+    socketEmitter.to(nlpEngine.toString()).emit(
+        Constants.EVENT.CHAT,
+        dataEmit,
+    );
+};
+
+exports.sendLeftRoom = nlpEngine => {
+    const dataEmit = {
+        type: Constants.EVENT_TYPE.LEFT_ROOM,
+        payload: {},
+    };
+    socketEmitter.to(nlpEngine.toString()).emit(
+        Constants.EVENT.CHAT,
+        dataEmit,
+    );
+};

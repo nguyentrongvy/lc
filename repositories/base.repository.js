@@ -5,7 +5,7 @@ module.exports = class BaseRepository {
 		this.model = mongoose.model(modelName);
 	}
 
-	getAll(options) {
+	getMany(options) {
 		const newOptions = Object.assign({
 			isLean: true,
 			page: 1,
@@ -26,6 +26,25 @@ module.exports = class BaseRepository {
 		return this.model.find(newOptions.where)
 			.skip(parseInt(skip))
 			.limit(parseInt(newOptions.limit))
+			.select(newOptions.fields)
+			.sort(newOptions.sort)
+			.populate(newOptions.populate)
+			.lean(newOptions.isLean);
+	}
+
+	getAll(options) {
+		const newOptions = Object.assign({
+			isLean: true,
+			fields: '',
+			populate: [],
+			sort: ''
+		}, options);
+
+		newOptions.where = Object.assign({}, {
+			deletedAt: null
+		}, newOptions.where);
+
+		return this.model.find(newOptions.where)
 			.select(newOptions.fields)
 			.sort(newOptions.sort)
 			.populate(newOptions.populate)
@@ -77,7 +96,7 @@ module.exports = class BaseRepository {
 			deletedAt: new Date()
 		});
 	}
-    
+
 	getOneAndUpdate(options) {
 		const newOptions = Object.assign({
 			isLean: true
@@ -86,7 +105,7 @@ module.exports = class BaseRepository {
 		newOptions.where = Object.assign({}, {
 			deletedAt: null,
 		}, newOptions.where);
-        
+
 		newOptions.options = Object.assign({}, {
 			new: true,
 		}, newOptions.options);
@@ -103,13 +122,13 @@ module.exports = class BaseRepository {
 	}
 
 	updateOne(options) {
-		const newOptions = {...options};
+		const newOptions = { ...options };
 		newOptions.where = Object.assign({}, {
 			deleletedAt: null
 		}, newOptions.where);
 		newOptions.options = Object.assign({}, {
 			new: true
 		}, newOptions.options);
-		return this.model.updateOne(newOptions.where, newOptions.data, newOptions.options); 
+		return this.model.updateOne(newOptions.where, newOptions.data, newOptions.options);
 	}
 };

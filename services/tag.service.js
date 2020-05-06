@@ -1,8 +1,13 @@
 const { tagRepository } = require('../repositories/index');
 
 class TagsService {
-    async getAll() {
-        return await tagRepository.getAll();
+    async getAll(nlpEngine) {
+        const options = {
+            where: {
+                nlpEngine: nlpEngine,
+            },
+        }
+        return await tagRepository.getAll(options);
     }
 }
 
