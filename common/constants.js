@@ -27,6 +27,9 @@ const constants = {
 		STOP_BOT: 'STOP_BOT_SUCCESS',
 		START_BOT: 'START_BOT_SUCCESS',
 		COUNT_ROOMS: 'COUNT_ROOMS_SUCCESS',
+		GET_NOTIFICATIONS: 'GET_NOTIFICATIONS_SUCCESS',
+		CREATE_NOTIFICATION: 'CREATE_NOTIFICATION_SUCCESS',
+		HANDLE_NOTIFICATION: 'HANDLE_NOTIFICATION_SUCCESS',
 	},
 	REGEX: {
 		OBJECT_ID: /^(?=[a-f\d]{24}$)(\d+[a-f]|[a-f]+\d)/i,
@@ -42,6 +45,7 @@ const constants = {
 	},
 	EVENT: {
 		CHAT: 'chat',
+		NOTIFICATION: 'notification',
 	},
 	EVENT_TYPE: {
 		SEND_MESSAGE: 'send_message',
@@ -50,6 +54,9 @@ const constants = {
 		SEND_USER_MESSAGE: 'user_message',
 		FOCUS_INPUT: 'focus',
 		CLEAR_TIMER: 'clear_timer',
+		SEND_NOTIFICATION: 'send_notificaiton',
+		JOIN_ROOM: 'join_room',
+		LEFT_ROOM: 'left_room',
 	},
 	REDIS: {
 		PREFIX: {
@@ -57,7 +64,7 @@ const constants = {
 			STOP_BOT: 'stoppedBot_',
 		},
 		ROOM: {
-			EXPIRE_TIME: 15 * 1000, // ms
+			EXPIRE_TIME: 5 * 1000, // ms
 			STOP_TIME: 60 * 60 * 24 * 1000, // ms
 		},
 	},
@@ -67,7 +74,14 @@ const constants = {
 	FLAG: {
 		SEARCH_BY_ROOM_NAME: 'search_by_room_name',
 		SEARCH_BY_TAGS: 'search_by_tags',
-	}
+	},
+	NOTIFICATION: {
+		LIMIT: 10,
+		TYPES: {
+			NORMAL: 'normal',
+			JOIN_ROOM: 'join_room',
+		},
+	},
 };
 
 module.exports = Object.freeze(constants);
