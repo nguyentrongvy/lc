@@ -124,8 +124,12 @@ class RoomService {
 			room: roomID,
 			channel: room.channel,
 		});
+		const suggestions = await messageService.getSuggestionRedis(roomID, nlpEngine);
 
-		sendJoinRoom(nlpEngine, room);
+		sendJoinRoom(nlpEngine, {
+			...room.toObject(),
+			suggestions,
+		});
 		return message;
 	}
 

@@ -7,4 +7,5 @@ module.exports = {
 	tagRepository: new BaseRepository('Tag'),
 	messageRepository: new BaseRepository('Message'),
 	roomRepository: new BaseRepository('Room'),
+	notificationRepository: new BaseRepository('Notification'),
 };

@@ -54,7 +54,7 @@ const constants = {
 		SEND_USER_MESSAGE: 'user_message',
 		FOCUS_INPUT: 'focus',
 		CLEAR_TIMER: 'clear_timer',
-		SEND_NOTIFICATION: 'send_notificaiton',
+		SEND_NOTIFICATION: 'send_notification',
 		JOIN_ROOM: 'join_room',
 		LEFT_ROOM: 'left_room',
 	},
@@ -64,7 +64,7 @@ const constants = {
 			STOP_BOT: 'stoppedBot_',
 		},
 		ROOM: {
-			EXPIRE_TIME: 5 * 1000, // ms
+			EXPIRE_TIME: 15 * 1000, // ms
 			STOP_TIME: 60 * 60 * 24 * 1000, // ms
 		},
 	},
