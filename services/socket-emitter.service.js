@@ -69,10 +69,10 @@ exports.sendNotification = (nlpEngine, notification) => {
     );
 };
 
-exports.sendJoinRoom = (nlpEngine, room) => {
+exports.sendJoinRoom = (nlpEngine, room, message) => {
     const dataEmit = {
         type: Constants.EVENT_TYPE.JOIN_ROOM,
-        payload: { room },
+        payload: { room, message },
     };
     socketEmitter.to(nlpEngine.toString()).emit(
         Constants.EVENT.CHAT,

@@ -129,7 +129,7 @@ class RoomService {
 		sendJoinRoom(nlpEngine, {
 			...room.toObject(),
 			suggestions,
-		});
+		}, message.toObject());
 		return message;
 	}
 
