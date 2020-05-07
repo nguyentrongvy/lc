@@ -107,7 +107,16 @@ class RoomService {
 		room.agents = [agentID];
 		await room.save();
 
-		const userName = await usersService.getUser(agentID);
+		const [
+			userName,
+			suggestions,
+			botUser,
+		] = await Promise.all([
+			usersService.getUser(agentID),
+			messageService.getSuggestionRedis(roomID, nlpEngine),
+			getBotUserByUserId(roomID),
+		]);
+
 		let content;
 		if (!adminID) {
 			content = `${userName} has joined this room.`;
@@ -124,11 +133,11 @@ class RoomService {
 			room: roomID,
 			channel: room.channel,
 		});
-		const suggestions = await messageService.getSuggestionRedis(roomID, nlpEngine);
 
 		sendJoinRoom(nlpEngine, {
 			...room.toObject(),
 			suggestions,
+			botUser,
 		}, message.toObject());
 		return message;
 	}
