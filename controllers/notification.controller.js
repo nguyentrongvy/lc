@@ -22,7 +22,8 @@ class NotificationControlelr {
             const {
                 type,
                 content,
-                userId: botUser,
+                botUser,
+                channel,
             } = req.body;
             const nlpEngine = req.nlpEngine._id;
             await notificationService.createNotification({
@@ -30,6 +31,7 @@ class NotificationControlelr {
                 content,
                 botUser,
                 nlpEngine,
+                channel,
             });
 
             return ResponseSuccess(Constants.SUCCESS.CREATE_NOTIFICATION, null, res);

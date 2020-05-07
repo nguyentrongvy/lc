@@ -29,7 +29,6 @@ exports.initEvent = (socket) => {
                     if (!message) { 
                         return callback(new Error('Message is invalid'));
                     }
-                    const botUserId = _.get(room, 'botUser._id', '').toString();
                     const dataEmit = {
                         type: Constants.EVENT_TYPE.LAST_MESSAGE_AGENT,
                         payload: {

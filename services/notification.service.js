@@ -27,14 +27,25 @@ class NotificationService {
         });
     }
 
-    async createNotification({ type, content, botUser, nlpEngine }) {
-        const room = await roomRepository.getOne({
+    async createNotification({ type, content, botUser, nlpEngine, channel }) {
+        let room = await roomRepository.getOne({
             where: {
-                'botUser._id': botUser,
+                'botUser._id': botUser._id,
                 nlpEngine,
             },
             fields: '_id agents',
         });
+
+        if (!room) {
+            room = await roomRepository.create({
+                channel,
+                nlpEngine,
+                botUser: {
+                    _id: botUser._id,
+                    username: botUser.name || Constants.CHAT_CONSTANTS.DEFAULT_NAME,
+                },
+            });
+        }
 
         const dataNotification = {
             type,
@@ -83,7 +94,7 @@ class NotificationService {
             }).catch(err => {
                 if (err.message === Constants.ERROR.ROOM_NOT_FOUND) {
                     return;
-                } 
+                }
                 console.error(err);
             });
         }

@@ -325,6 +325,9 @@ class MessageService {
 				room,
 			},
 		};
+		if (!room.agents ||room.agents.length === 0) {
+			dataEmit.type = Constants.EVENT_TYPE.SEND_UNASSIGNED_CHAT;
+		}
 		await this.sendToBot({
 			room,
 			responses: content,
@@ -351,7 +354,7 @@ async function getRoom({ botUser, nlpEngine, channel }) {
 	};
 	const existedRoom = await roomRepository.getOne({
 		where: condition,
-		fields: '_id agents',
+		fields: '_id agents channel',
 		isLean: false,
 	});
 	if (existedRoom) {
