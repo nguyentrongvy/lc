@@ -40,13 +40,30 @@ class MessageControlelr {
 	async getMessagesByRoomID(req, res, next) {
 		try {
 			const { id: roomID } = req.params;
-			let { channel, search, lastMessage } = req.query;
+			let { channel, search, lastMessage, type } = req.query;
 			const messages = await messageService.getMessagesByRoomID({
 				channel,
 				search,
 				lastMessage,
 				roomID,
+				type,
 			});
+			return ResponseSuccess(Constants.SUCCESS.GET_LIST_MESSAGE, messages, res);
+		} catch (error) {
+			next(error);
+		}
+	}
+
+	async getMessagesByKeyWord(req, res, next) {
+		try {
+			const { id: roomId } = req.params;
+			const { search, lastMessage } = req.query;
+			const messages = await messageService.getMessagesByKeyWord({ 
+				search,
+				lastMessage,
+				roomId,
+			});
+
 			return ResponseSuccess(Constants.SUCCESS.GET_LIST_MESSAGE, messages, res);
 		} catch (error) {
 			next(error);

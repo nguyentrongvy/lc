@@ -78,28 +78,70 @@ class MessageService {
 		});
 	}
 
-	async getMessagesByRoomID({ search, lastMessage, roomID }) {
+	async getMessagesByRoomID({ search, lastMessage, roomID, type }) {
 		const condition = {
 			room: roomID,
 		};
-		if (lastMessage) {
-			condition._id = {
-				$lt: lastMessage,
-			};
+		if (!type || type == 'prev') {
+			if (lastMessage) {
+				condition._id = {
+					$lt: lastMessage,
+				};
+			}
 		}
-		if (search) {
-			condition.content = new RegExp(search, 'gi');
+		if (type == 'next') {
+			if (lastMessage) {
+				condition._id = {
+					$gt: lastMessage,
+				};
+			}
 		}
+
 		const sortCondition = {
 			createdAt: -1,
 		};
-		const messages = await messageRepository.getAll({
+		const messages = await messageRepository.getMany({
 			where: condition,
 			sort: sortCondition,
 			fields: 'botUser agent content createdAt',
 		});
 
 		return messages;
+	}
+
+	async getMessagesByKeyWord({ search, lastMessage, roomId }) {
+		const condition = {
+			room: roomId,
+		};
+		if (search) {
+			condition.content = new RegExp(search, 'gi');
+		};
+		const sortCondition = {
+			createdAt: -1,
+		};
+		if (lastMessage) {
+			const messagesBylastMessage = await getMessagesByLastMessage(lastMessage, roomId);
+			return {
+				messagesBylastMessage,
+				currentId: lastMessage,
+			};
+		}
+		const messages = await messageRepository.getMany({
+			where: condition,
+			sort: sortCondition,
+			fields: 'botUser agent content createdAt',
+		});
+		if (!messages || messages.length == 0) return;
+
+		lastMessage = (messages && messages[0] && messages[0]._id && messages[0]._id.toString()) || '';
+
+		const messagesBylastMessage = await getMessagesByLastMessage(lastMessage, roomId);
+
+		return {
+			messages,
+			messagesBylastMessage,
+			currentId: lastMessage,
+		};
 	}
 
 	async sendAgentMessage({ agentId, roomId, content, nlpEngine }) {
@@ -394,6 +436,37 @@ function convertContent(content) {
 		}
 	} catch (error) { }
 	return message;
+}
+
+async function getMessagesByLastMessage(lastMessage, roomId) {
+	const options = {
+		room: roomId,
+		_id: {
+			$gte: lastMessage,
+		},
+	};
+	const nextMessages = await messageRepository.getMany({
+		limit: 4,
+		where: options,
+		fields: 'botUser agent content createdAt',
+	});
+
+	const condition = {
+		room: roomId,
+		_id: {
+			$lt: lastMessage,
+		},
+	};
+
+	let prevMessages = await messageRepository.getMany({
+		limit: 3,
+		where: condition,
+		fields: 'botUser agent content createdAt',
+		sort: { _id: -1 },
+	});
+	prevMessages = prevMessages.reverse();
+
+	return prevMessages.concat(nextMessages);
 }
 
 module.exports = new MessageService();

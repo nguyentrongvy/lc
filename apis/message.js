@@ -21,4 +21,11 @@ exports.load = (app) => {
 		],
 		messageController.getMessagesByRoomID,
 	);
+	app.get(
+		'/api/v1/rooms/:id/messages/keyword',
+		[
+			authenMiddleware.verifyToken,
+		],
+		messageController.getMessagesByKeyWord
+	)
 };
