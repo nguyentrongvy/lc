@@ -1,6 +1,3 @@
-const _ = require('lodash');
-const axios = require('axios');
-const { delFromRedis, setExToRedis } = require('../services/redis.service');
 const Constants = require('../common/constants');
 const messageService = require('../services/message.service');
 const roomService = require('../services/room.service');
@@ -26,7 +23,7 @@ exports.initEvent = (socket) => {
                         nlpEngine,
                         content: responses,
                     });
-                    if (!message) { 
+                    if (!message) {
                         return callback(new Error('Message is invalid'));
                     }
                     const dataEmit = {

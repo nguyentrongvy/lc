@@ -45,7 +45,7 @@ class MessageService {
 			},
 		});
 
-		await this.setTimeoutRepsonse(roomID, botUser._id, nlpEngine);
+		await this.setTimeoutResponse(roomID, botUser._id, nlpEngine);
 
 		const isStoppedBot = await this.checkBotHasStop(
 			botUser._id.toString(),
@@ -378,7 +378,7 @@ class MessageService {
 		await removeSuggestions(roomId, nlpEngine);
 	}
 
-	async setTimeoutRepsonse(roomId, botUserId, nlpEngine) {
+	async setTimeoutResponse(roomId, botUserId, nlpEngine) {
 		await this.removeTimer(roomId, botUserId, nlpEngine);
 		return setExToRedis(
 			`${Constants.REDIS.PREFIX.ROOM}${roomId}_${botUserId}_${nlpEngine}`,
