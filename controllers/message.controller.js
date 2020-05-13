@@ -1,8 +1,10 @@
+const _ = require('lodash');
 const messageService = require('../services/message.service');
 const { ResponseSuccess } = require('../helpers/response.helper');
 const Constants = require('../common/constants');
+const logger = require('../services/logger');
 
-class MessageControlelr {
+class MessageController {
 	async sendMessage(req, res, next) {
 		try {
 			const {
@@ -14,22 +16,40 @@ class MessageControlelr {
 				entities,
 				responses,
 			} = req.body;
+
+			const isOffline = await messageService.checkAgentOffline(engineId);
+
 			const { message, room, isNew } = await messageService.sendMessage({
 				botUser,
 				engineId,
 				content,
 				channel,
+				isOffline,
 			});
 
-			await messageService.emitMessage({
-				room,
-				message,
-				intents,
-				entities,
-				engineId,
-				responses,
-				isNew,
-			});
+			if (isOffline || isNew) {
+				setImmediate(() => {
+					const validResponses = _.get(responses, '[0].channelResponses', '');
+					messageService.sendToBot({
+						room,
+						intents,
+						entities,
+						responses: validResponses,
+					}).catch(err => {
+						logger.error(err);
+					});
+				});
+			} else {
+				await messageService.emitMessage({
+					room,
+					message,
+					intents,
+					entities,
+					engineId,
+					responses,
+					isNew,
+				});
+			}
 
 			return ResponseSuccess(Constants.SUCCESS.SEND_MESSAGE, message, res);
 		} catch (error) {
@@ -58,7 +78,7 @@ class MessageControlelr {
 		try {
 			const { id: roomId } = req.params;
 			const { search, lastMessage } = req.query;
-			const messages = await messageService.getMessagesByKeyWord({ 
+			const messages = await messageService.getMessagesByKeyWord({
 				search,
 				lastMessage,
 				roomId,
@@ -71,4 +91,4 @@ class MessageControlelr {
 	}
 }
 
-module.exports = new MessageControlelr();
+module.exports = new MessageController();

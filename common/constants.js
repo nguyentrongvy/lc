@@ -67,6 +67,9 @@ const constants = {
 			EXPIRE_TIME: 15 * 1000, // ms
 			STOP_TIME: 60 * 60 * 24 * 1000, // ms
 		},
+		HASHMAP: {
+			STATUS: 'status',
+		},
 	},
 	CHAT_CONSTANTS: {
 		DEFAULT_NAME: 'Guest',

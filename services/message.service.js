@@ -20,7 +20,7 @@ const {
 } = require('../services/socket-emitter.service');
 
 class MessageService {
-	async sendMessage({ botUser, engineId, content, channel }) {
+	async sendMessage({ botUser, engineId, content, channel, isOffline }) {
 		const { isNew, room } = await getRoom({ botUser, engineId, channel });
 		const roomID = room._id;
 		const botUserId = botUser._id;
@@ -45,7 +45,9 @@ class MessageService {
 			},
 		});
 
-		await this.setTimeoutRepsonse(roomID, botUser._id, engineId);
+		if (!isOffline) {
+			await this.setTimeoutResponse(roomID, botUser._id, engineId);
+		}
 
 		const isStoppedBot = await this.checkBotHasStop(
 			botUser._id.toString(),
@@ -378,13 +380,18 @@ class MessageService {
 		await removeSuggestions(roomId, engineId);
 	}
 
-	async setTimeoutRepsonse(roomId, botUserId, engineId) {
+	async setTimeoutResponse(roomId, botUserId, engineId) {
 		await this.removeTimer(roomId, botUserId, engineId);
 		return setExToRedis(
 			`${Constants.REDIS.PREFIX.ROOM}${roomId}_${botUserId}_${engineId}`,
 			parseInt(Constants.REDIS.ROOM.EXPIRE_TIME / 1000),
 			true,
 		);
+	}
+
+	async checkAgentOffline(enginedId) {
+		const status = await hmGetFromRedis(Constants.REDIS.HASHMAP.STATUS, enginedId);
+		return status[0] !== 'true';
 	}
 }
 
@@ -396,7 +403,7 @@ async function getRoom({ botUser, engineId, channel }) {
 	};
 	const existedRoom = await roomRepository.getOne({
 		where: condition,
-		fields: '_id agents channel',
+		fields: '_id agents channel botUser',
 		isLean: false,
 	});
 	if (existedRoom) {

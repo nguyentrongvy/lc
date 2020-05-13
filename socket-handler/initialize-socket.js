@@ -1,4 +1,6 @@
 const message = require('./message');
+const { hmSetToRedis } = require('../services/redis.service');
+const Constants = require('../common/constants');
 
 exports.initialize = (io) => {
 	io.on('connection', async function (socket) {
@@ -7,13 +9,7 @@ exports.initialize = (io) => {
 			const engineId = socket.engine._id;
 			socket.join(userId);
 			socket.join(engineId);
-			const countMultiDevicesOnline = numClientsInRoom(io, '/', userId);
-			if (countMultiDevicesOnline === 1) {
-				socket.broadcast.emit('status', {
-					action: 'ONLINE',
-					data: userId
-				});
-			}
+			await setStatusToRedis(engineId, true);
 			// ----------------------
 			// ------INIT EVENT------
 			// ----------------------
@@ -21,12 +17,9 @@ exports.initialize = (io) => {
 
 			socket.on('disconnect', async function () {
 				try {
-					const countMultiDevicesOnline = numClientsInRoom(io, '/', userId);
+					const countMultiDevicesOnline = numClientsInRoom(io, '/', engineId);
 					if (countMultiDevicesOnline === 0) {
-						socket.broadcast.emit('status', {
-							action: 'OFFLINE',
-							data: userId
-						});
+						await setStatusToRedis(engineId, false);
 					}
 				} catch (error) {
 					console.error(error);
@@ -44,4 +37,8 @@ function numClientsInRoom(io, namespace, room) {
 		return 0;
 	}
 	return clients.length; // number clients in room
+}
+
+function setStatusToRedis(engineId, status) {
+	return hmSetToRedis(Constants.REDIS.HASHMAP.STATUS, engineId.toString(), status);
 }
