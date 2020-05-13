@@ -13,7 +13,7 @@ const notificationSchema = new mongoose.Schema({
 		enum: Object.values(Constants.NOTIFICATION.TYPES),
 		default: Constants.NOTIFICATION.TYPES.NORMAL,
 	},
-	nlpEngine: {
+	engineId: {
 		type: mongoose.SchemaTypes.ObjectId,
 		required: true,
 		ref: 'NlpEngine',

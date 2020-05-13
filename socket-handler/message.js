@@ -15,12 +15,12 @@ exports.initEvent = (socket) => {
                         responses,
                     } = data.payload;
                     const agentId = socket.user._id;
-                    const nlpEngine = socket.nlpEngine._id;
-                    await messageService.removeTimer(roomId, '*', nlpEngine);
+                    const engineId = socket.engine._id;
+                    await messageService.removeTimer(roomId, '*', engineId);
                     const { message, room } = await messageService.sendAgentMessage({
                         roomId,
                         agentId,
-                        nlpEngine,
+                        engineId,
                         content: responses,
                     });
                     if (!message) {

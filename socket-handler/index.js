@@ -10,7 +10,7 @@ function authenticationUser(socket, next) {
 		}
 		const verifiedData = jwtHelper.verifyToken(token);
 		socket.user = verifiedData.user;
-		socket.nlpEngine = verifiedData.org;
+		socket.engine = verifiedData.org;
 		return next();
 	} catch (error) {
 		console.error(error);

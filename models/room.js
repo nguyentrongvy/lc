@@ -21,7 +21,7 @@ const roomSchema = new mongoose.Schema({
 		type: mongoose.SchemaTypes.ObjectId,
 		ref: 'Message',
 	},
-	nlpEngine: {
+	engineId: {
 		type: mongoose.SchemaTypes.ObjectId,
 		ref: 'NlpEngine',
 		required: true,

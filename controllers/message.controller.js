@@ -7,7 +7,7 @@ class MessageControlelr {
 		try {
 			const {
 				botUser,
-				nlpEngine,
+				engineId,
 				content,
 				channel,
 				intents,
@@ -16,7 +16,7 @@ class MessageControlelr {
 			} = req.body;
 			const { message, room, isNew } = await messageService.sendMessage({
 				botUser,
-				nlpEngine,
+				engineId,
 				content,
 				channel,
 			});
@@ -26,7 +26,7 @@ class MessageControlelr {
 				message,
 				intents,
 				entities,
-				nlpEngine,
+				engineId,
 				responses,
 				isNew,
 			});

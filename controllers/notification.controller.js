@@ -6,10 +6,10 @@ class NotificationControlelr {
     async getListNotification(req, res, next) {
         try {
             const { lastNotification } = req.query;
-            const nlpEngine = req.nlpEngine._id;
+            const engineId = req.engine._id;
             const notifications = await notificationService.getListNotification({
                 lastNotification,
-                nlpEngine,
+                engineId,
             });
             return ResponseSuccess(Constants.SUCCESS.GET_NOTIFICATIONS, notifications, res);
         } catch (error) {
@@ -25,12 +25,12 @@ class NotificationControlelr {
                 botUser,
                 channel,
             } = req.body;
-            const nlpEngine = req.nlpEngine._id;
+            const engineId = req.engine._id;
             await notificationService.createNotification({
                 type,
                 content,
                 botUser,
-                nlpEngine,
+                engineId,
                 channel,
             });
 
@@ -44,11 +44,11 @@ class NotificationControlelr {
         try {
             const { id: notiId } = req.params;
             const agentId = req.user._id;
-            const nlpEngine = req.nlpEngine._id;
+            const engineId = req.engine._id;
             const notification = await notificationService.handleNotification({
                 notiId,
                 agentId,
-                nlpEngine,
+                engineId,
             });
             return ResponseSuccess(Constants.SUCCESS.HANDLE_NOTIFICATION, notification, res);
         } catch (error) {
@@ -58,8 +58,8 @@ class NotificationControlelr {
 
     async countNotification(req, res, next) {
         try {
-            const nlpEngine = req.nlpEngine._id;
-            const count = await notificationService.countNotification(nlpEngine);
+            const engineId = req.engine._id;
+            const count = await notificationService.countNotification(engineId);
             return ResponseSuccess(Constants.SUCCESS.COUNT_NOTIFICATION, count, res);
         } catch(error) {
             next(error);

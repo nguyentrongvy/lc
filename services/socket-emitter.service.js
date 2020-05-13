@@ -9,7 +9,7 @@ exports.sendMessage = ({
     intents,
     entities,
     responses,
-    nlpEngine,
+    engineId,
     isNew,
 }) => {
     const agentId = _.get(room, 'agents[0]', '').toString();
@@ -22,7 +22,7 @@ exports.sendMessage = ({
         isNew,
     };
     if (!agentId) {
-        socketEmitter.to(nlpEngine).emit(
+        socketEmitter.to(engineId).emit(
             Constants.EVENT.CHAT,
             {
                 payload,
@@ -47,45 +47,45 @@ exports.sendBotMessage = (receiver, dataEmit) => {
     socketEmitter.to(receiver.toString()).emit(Constants.EVENT.CHAT, dataEmit);
 };
 
-exports.sendClearTimer = (roomId, nlpEngine) => {
+exports.sendClearTimer = (roomId, engineId) => {
     const dataEmit = {
         type: Constants.EVENT_TYPE.CLEAR_TIMER,
         payload: { roomId },
     };
-    socketEmitter.to(nlpEngine.toString()).emit(
+    socketEmitter.to(engineId.toString()).emit(
         Constants.EVENT.CHAT,
         dataEmit,
     );
 };
 
-exports.sendNotification = (nlpEngine, notification) => {
+exports.sendNotification = (engineId, notification) => {
     const dataEmit = {
         type: Constants.EVENT_TYPE.SEND_NOTIFICATION,
         payload: { notification },
     };
-    socketEmitter.to(nlpEngine.toString()).emit(
+    socketEmitter.to(engineId.toString()).emit(
         Constants.EVENT.NOTIFICATION,
         dataEmit,
     );
 };
 
-exports.sendJoinRoom = (nlpEngine, room, message) => {
+exports.sendJoinRoom = (engineId, room, message) => {
     const dataEmit = {
         type: Constants.EVENT_TYPE.JOIN_ROOM,
         payload: { room, message },
     };
-    socketEmitter.to(nlpEngine.toString()).emit(
+    socketEmitter.to(engineId.toString()).emit(
         Constants.EVENT.CHAT,
         dataEmit,
     );
 };
 
-exports.sendLeftRoom = nlpEngine => {
+exports.sendLeftRoom = engineId => {
     const dataEmit = {
         type: Constants.EVENT_TYPE.LEFT_ROOM,
         payload: {},
     };
-    socketEmitter.to(nlpEngine.toString()).emit(
+    socketEmitter.to(engineId.toString()).emit(
         Constants.EVENT.CHAT,
         dataEmit,
     );

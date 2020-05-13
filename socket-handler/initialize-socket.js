@@ -4,9 +4,9 @@ exports.initialize = (io) => {
 	io.on('connection', async function (socket) {
 		try {
 			const userId = socket.user._id;
-			const nlpEngine = socket.nlpEngine._id;
+			const engineId = socket.engine._id;
 			socket.join(userId);
-			socket.join(nlpEngine);
+			socket.join(engineId);
 			const countMultiDevicesOnline = numClientsInRoom(io, '/', userId);
 			if (countMultiDevicesOnline === 1) {
 				socket.broadcast.emit('status', {

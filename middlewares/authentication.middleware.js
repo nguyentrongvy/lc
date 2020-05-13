@@ -9,7 +9,7 @@ exports.verifyToken = async (req, res, next) => {
 		}
 
 		if (token === process.env.SERVER_API_KEY) {
-			req.nlpEngine = {
+			req.engine = {
 				_id: req.headers.engineid,
 				isTwoChannels: req.headers.istwochannels === 'true',
 				isMultiIntents: req.headers.ismultiintents === 'true',
@@ -32,7 +32,7 @@ exports.verifyToken = async (req, res, next) => {
 			return next(new Error('INVALID_TOKEN'));
 		}
 		req.accessToken = accessToken;
-		req.nlpEngine = await getNlpEngineById(dataVerified && dataVerified.engine && dataVerified.engine._id);
+		req.engine = await getNlpEngineById(dataVerified && dataVerified.engine && dataVerified.engine._id);
 		req.user = {
 			_id: dataVerified.user._id,
 		};

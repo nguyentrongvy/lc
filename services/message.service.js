@@ -20,15 +20,15 @@ const {
 } = require('../services/socket-emitter.service');
 
 class MessageService {
-	async sendMessage({ botUser, nlpEngine, content, channel }) {
-		const { isNew, room } = await getRoom({ botUser, nlpEngine, channel });
+	async sendMessage({ botUser, engineId, content, channel }) {
+		const { isNew, room } = await getRoom({ botUser, engineId, channel });
 		const roomID = room._id;
 		const botUserId = botUser._id;
 
 		const validContent = convertContent(content);
 		const message = await this.create({
 			channel,
-			nlpEngine,
+			engineId,
 			room: roomID,
 			botUser: botUserId,
 			content: validContent,
@@ -45,11 +45,11 @@ class MessageService {
 			},
 		});
 
-		await this.setTimeoutResponse(roomID, botUser._id, nlpEngine);
+		await this.setTimeoutRepsonse(roomID, botUser._id, engineId);
 
 		const isStoppedBot = await this.checkBotHasStop(
 			botUser._id.toString(),
-			nlpEngine.toString()
+			engineId.toString()
 		);
 
 		let expiredTime = new Date().getTime() + Constants.REDIS.ROOM.EXPIRE_TIME;
@@ -67,10 +67,10 @@ class MessageService {
 		};
 	}
 
-	create({ botUser, nlpEngine, room, content, channel, action }) {
+	create({ botUser, engineId, room, content, channel, action }) {
 		return messageRepository.create({
 			botUser: botUser,
-			nlpEngine: nlpEngine,
+			engineId: engineId,
 			room,
 			content: content,
 			channel: channel,
@@ -144,7 +144,7 @@ class MessageService {
 		};
 	}
 
-	async sendAgentMessage({ agentId, roomId, content, nlpEngine }) {
+	async sendAgentMessage({ agentId, roomId, content, engineId }) {
 		let validContent = content;
 		if (typeof validContent === 'object') {
 			if (_.isArray(validContent) && validContent.length === 0) {
@@ -154,18 +154,18 @@ class MessageService {
 		}
 		const room = await roomRepository.getOne({
 			where: {
-				nlpEngine,
+				engineId,
 				_id: roomId,
 				'agents': agentId,
 			},
-			fields: '_id channel lastMessage botUser unreadMessages nlpEngine',
+			fields: '_id channel lastMessage botUser unreadMessages engineId',
 			isLean: false,
 		});
 		if (!room) {
 			throw new Error(Constants.ERROR.ROOM_NOT_FOUND);
 		}
 		const message = await messageRepository.create({
-			nlpEngine,
+			engineId,
 			room: roomId,
 			agent: agentId,
 			channel: room.channel,
@@ -181,23 +181,23 @@ class MessageService {
 		};
 	}
 
-	async sendBotMessage({ roomId, content, nlpEngine }) {
+	async sendBotMessage({ roomId, content, engineId }) {
 		const room = await roomRepository.getOneAndUpdate({
 			where: {
-				nlpEngine,
+				engineId,
 				_id: roomId,
 			},
 			data: {
 				unreadMessages: 0,
 			},
-			fields: '_id channel lastMessage botUser agents nlpEngine',
+			fields: '_id channel lastMessage botUser agents engineId',
 			isLean: false,
 		});
 		if (!room) {
 			throw new Error(Constants.ERROR.ROOM_NOT_FOUND);
 		}
 		const message = await messageRepository.create({
-			nlpEngine,
+			engineId,
 			room: roomId,
 			content: JSON.stringify(content),
 			channel: room.channel,
@@ -217,21 +217,21 @@ class MessageService {
 		intents,
 		entities,
 		responses,
-		nlpEngine,
+		engineId,
 		isNew,
 	}) {
 		const roomId = room._id;
 		const botUser = _.get(room, 'botUser._id', '').toString();
 
-		const isStoppedBot = await this.checkBotHasStop(botUser, nlpEngine);
+		const isStoppedBot = await this.checkBotHasStop(botUser, engineId);
 		if (!isStoppedBot) {
-			const suggestions = await this.getSuggestionRedis(roomId, nlpEngine);
+			const suggestions = await this.getSuggestionRedis(roomId, engineId);
 			if (
 				typeof suggestions === 'object'
 				&& 'responses' in suggestions
 				&& !!botUser
 			) {
-				await this.sendMessageAuto({ suggestions, roomId, nlpEngine });
+				await this.sendMessageAuto({ suggestions, roomId, engineId });
 			}
 		}
 
@@ -242,7 +242,7 @@ class MessageService {
 				responses,
 				text: message.content,
 			});
-			await hmSetToRedis(nlpEngine.toString(), roomId.toString(), dataStore);
+			await hmSetToRedis(engineId.toString(), roomId.toString(), dataStore);
 		}
 
 		sendMessage({
@@ -251,7 +251,7 @@ class MessageService {
 			intents,
 			entities,
 			responses,
-			nlpEngine,
+			engineId,
 			isNew,
 		});
 	}
@@ -263,7 +263,7 @@ class MessageService {
 		responses,
 	}) {
 		const userId = _.get(room, 'botUser._id', '').toString();
-		const nlpEngine = _.get(room, 'nlpEngine', '').toString();
+		const engineId = _.get(room, 'engineId', '').toString();
 		const roomId = room._id.toString();
 		const channel = room.channel;
 
@@ -277,8 +277,8 @@ class MessageService {
 			text,
 			intents: oldIntents,
 			entities: oldEntities,
-		} = await this.getSuggestionRedis(roomId, nlpEngine);
-		await removeSuggestions(roomId, nlpEngine);
+		} = await this.getSuggestionRedis(roomId, engineId);
+		await removeSuggestions(roomId, engineId);
 
 		const url = `${process.env.NLP_SERVER}/api/v1/agents/messages`;
 		await axios.post(url, {
@@ -293,14 +293,14 @@ class MessageService {
 		}, {
 			headers: {
 				authorization: process.env.SERVER_API_KEY,
-				engineid: nlpEngine,
+				engineid: engineId,
 			},
 		});
 	}
 
-	async getSuggestionRedis(roomId, nlpEngine) {
+	async getSuggestionRedis(roomId, engineId) {
 		const data = await hmGetFromRedis(
-			nlpEngine.toString(),
+			engineId.toString(),
 			roomId.toString()
 		);
 		try {
@@ -313,16 +313,16 @@ class MessageService {
 		return {};
 	}
 
-	async setStopBot(roomId, botUserId, nlpEngine) {
-		const stopPrefix = `${Constants.REDIS.PREFIX.STOP_BOT}${botUserId}_${nlpEngine}`;
+	async setStopBot(roomId, botUserId, engineId) {
+		const stopPrefix = `${Constants.REDIS.PREFIX.STOP_BOT}${botUserId}_${engineId}`;
 
 		const stopStatus = {
 			isStopped: true,
 		};
 
 
-		await this.removeTimer(roomId, botUserId, nlpEngine);
-		sendClearTimer(roomId, nlpEngine);
+		await this.removeTimer(roomId, botUserId, engineId);
+		sendClearTimer(roomId, engineId);
 
 		return setExToRedis(
 			stopPrefix,
@@ -331,13 +331,13 @@ class MessageService {
 		);
 	}
 
-	unsetStopBot(botUserId, nlpEngine) {
-		const stopPrefix = `${Constants.REDIS.PREFIX.STOP_BOT}${botUserId}_${nlpEngine}`;
+	unsetStopBot(botUserId, engineId) {
+		const stopPrefix = `${Constants.REDIS.PREFIX.STOP_BOT}${botUserId}_${engineId}`;
 		return delFromRedis(stopPrefix);
 	}
 
-	async checkBotHasStop(botUserId, nlpEngine) {
-		const key = `${Constants.REDIS.PREFIX.STOP_BOT}${botUserId}_${nlpEngine}`;
+	async checkBotHasStop(botUserId, engineId) {
+		const key = `${Constants.REDIS.PREFIX.STOP_BOT}${botUserId}_${engineId}`;
 		let dataStopBot = await getFromRedis(key);
 		try {
 			dataStopBot = JSON.parse(dataStopBot);
@@ -348,16 +348,16 @@ class MessageService {
 		return false;
 	}
 
-	removeTimer(roomId, botUserId, nlpEngine) {
-		const key = `${Constants.REDIS.PREFIX.ROOM}${roomId}_${botUserId}_${nlpEngine}`;
+	removeTimer(roomId, botUserId, engineId) {
+		const key = `${Constants.REDIS.PREFIX.ROOM}${roomId}_${botUserId}_${engineId}`;
 		return delFromRedis(key);
 	}
 
-	async sendMessageAuto({ suggestions, roomId, nlpEngine }) {
+	async sendMessageAuto({ suggestions, roomId, engineId }) {
 		const content = _.get(suggestions, 'responses[0].channelResponses', []);
 		const { room, message } = await this.sendBotMessage({
 			roomId,
-			nlpEngine,
+			engineId,
 			content,
 		});
 		const dataEmit = {
@@ -374,23 +374,23 @@ class MessageService {
 			room,
 			responses: content,
 		});
-		sendBotMessage(nlpEngine, dataEmit);
-		await removeSuggestions(roomId, nlpEngine);
+		sendBotMessage(engineId, dataEmit);
+		await removeSuggestions(roomId, engineId);
 	}
 
-	async setTimeoutResponse(roomId, botUserId, nlpEngine) {
-		await this.removeTimer(roomId, botUserId, nlpEngine);
+	async setTimeoutRepsonse(roomId, botUserId, engineId) {
+		await this.removeTimer(roomId, botUserId, engineId);
 		return setExToRedis(
-			`${Constants.REDIS.PREFIX.ROOM}${roomId}_${botUserId}_${nlpEngine}`,
+			`${Constants.REDIS.PREFIX.ROOM}${roomId}_${botUserId}_${engineId}`,
 			parseInt(Constants.REDIS.ROOM.EXPIRE_TIME / 1000),
 			true,
 		);
 	}
 }
 
-async function getRoom({ botUser, nlpEngine, channel }) {
+async function getRoom({ botUser, engineId, channel }) {
 	const condition = {
-		nlpEngine,
+		engineId,
 		channel,
 		'botUser._id': botUser._id,
 	};
@@ -409,7 +409,7 @@ async function getRoom({ botUser, nlpEngine, channel }) {
 	}
 
 	const newRoom = await roomRepository.create({
-		nlpEngine,
+		engineId,
 		channel,
 		botUser: {
 			_id: botUser._id,
@@ -423,8 +423,8 @@ async function getRoom({ botUser, nlpEngine, channel }) {
 	};
 }
 
-function removeSuggestions(roomId, nlpEngine) {
-	return hmSetToRedis(nlpEngine.toString(), roomId.toString(), '');
+function removeSuggestions(roomId, engineId) {
+	return hmSetToRedis(engineId.toString(), roomId.toString(), '');
 }
 
 function convertContent(content) {

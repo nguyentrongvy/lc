@@ -9,9 +9,9 @@ const { sendNotification } = require('./socket-emitter.service');
 const roomService = require('./room.service');
 
 class NotificationService {
-    getListNotification({ nlpEngine, lastNotification }) {
+    getListNotification({ engineId, lastNotification }) {
         const condition = {
-            nlpEngine,
+            engineId,
         };
         if (lastNotification) {
             condition._id = {
@@ -27,11 +27,11 @@ class NotificationService {
         });
     }
 
-    async createNotification({ type, content, botUser, nlpEngine, channel }) {
+    async createNotification({ type, content, botUser, engineId, channel }) {
         let room = await roomRepository.getOne({
             where: {
                 'botUser._id': botUser._id,
-                nlpEngine,
+                engineId,
             },
             fields: '_id agents',
         });
@@ -39,7 +39,7 @@ class NotificationService {
         if (!room) {
             room = await roomRepository.create({
                 channel,
-                nlpEngine,
+                engineId,
                 botUser: {
                     _id: botUser._id,
                     username: botUser.name || Constants.CHAT_CONSTANTS.DEFAULT_NAME,
@@ -50,7 +50,7 @@ class NotificationService {
         const dataNotification = {
             type,
             content,
-            nlpEngine,
+            engineId,
             room: room._id,
         };
 
@@ -61,7 +61,7 @@ class NotificationService {
         //     dataNotification.isHandled = true;
         //     receiver = agent;
         // } else {
-        receiver = nlpEngine;
+        receiver = engineId;
         // }
 
         const notification = await notificationRepository.create(dataNotification);
@@ -70,10 +70,10 @@ class NotificationService {
         return notification;
     }
 
-    async handleNotification({ agentId, notiId, nlpEngine }) {
+    async handleNotification({ agentId, notiId, engineId }) {
         const notification = await notificationRepository.getOne({
             where: {
-                nlpEngine,
+                engineId,
                 _id: notiId,
                 isHandled: false,
             },
@@ -89,7 +89,7 @@ class NotificationService {
             const roomID = notification.room;
             await roomService.joinRoom({
                 roomID,
-                nlpEngine,
+                engineId,
                 agentID: agentId,
             }).catch(err => {
                 if (err.message === Constants.ERROR.ROOM_NOT_FOUND) {
@@ -101,13 +101,13 @@ class NotificationService {
 
         notification.isHandled = true;
         await notification.save();
-        sendNotification(nlpEngine, notification.toObject());
+        sendNotification(engineId, notification.toObject());
         return notification.toObject();
     }
 
-    countNotification(nlpEngine) {
+    countNotification(engineId) {
         return notificationRepository.count({
-            nlpEngine,
+            engineId,
             isHandled: false,
         });
     }

@@ -15,9 +15,9 @@ const {
 } = require('./redis.service');
 
 class RoomService {
-	async getUnassignedRooms({ page, limit, search, nlpEngine, flag }) {
+	async getUnassignedRooms({ page, limit, search, engineId, flag }) {
 		const condition = {
-			nlpEngine,
+			engineId,
 			$or: [
 				{
 					agents: {
@@ -35,12 +35,12 @@ class RoomService {
 			}
 		}
 		const rooms = await getRooms(condition, page, limit);
-		return await getRoomWithConfig(rooms, nlpEngine);
+		return await getRoomWithConfig(rooms, engineId);
 	}
 
-	getAssignedRooms({ page, limit, agentId, nlpEngine, search, flag }) {
+	getAssignedRooms({ page, limit, agentId, engineId, search, flag }) {
 		const condition = {
-			nlpEngine,
+			engineId,
 			agents: {
 				$elemMatch: {
 					$nin: [agentId],
@@ -62,9 +62,9 @@ class RoomService {
 		return getRooms(condition, page, limit);
 	}
 
-	async getOwnRooms({ page, limit, agentId, nlpEngine, search, flag }) {
+	async getOwnRooms({ page, limit, agentId, engineId, search, flag }) {
 		const condition = {
-			nlpEngine,
+			engineId,
 			agents: agentId,
 			$expr: {
 				$gte: [{ $size: "$agents" }, 1],
@@ -80,10 +80,10 @@ class RoomService {
 		}
 		const rooms = await getRooms(condition, page, limit);
 
-		return await getRoomWithConfig(rooms, nlpEngine);
+		return await getRoomWithConfig(rooms, engineId);
 	}
 
-	async joinRoom({ roomID, agentID, nlpEngine, adminID }) {
+	async joinRoom({ roomID, agentID, engineId, adminID }) {
 		const options = {
 			where: {
 				$or: [
@@ -113,7 +113,7 @@ class RoomService {
 			botUser,
 		] = await Promise.all([
 			usersService.getUser(agentID),
-			messageService.getSuggestionRedis(roomID, nlpEngine),
+			messageService.getSuggestionRedis(roomID, engineId),
 			getBotUserByUserId(roomID),
 		]);
 
@@ -126,7 +126,7 @@ class RoomService {
 		}
 		const action = Constants.ACTION.JOIN_ROOM;
 		const message = await messageService.create({
-			nlpEngine,
+			engineId,
 			content,
 			action,
 			agent: agentID,
@@ -134,7 +134,7 @@ class RoomService {
 			channel: room.channel,
 		});
 
-		sendJoinRoom(nlpEngine, {
+		sendJoinRoom(engineId, {
 			...room.toObject(),
 			suggestions,
 			botUser,
@@ -142,7 +142,7 @@ class RoomService {
 		return message;
 	}
 
-	async leftRoom({ roomID, agentID, nlpEngine }) {
+	async leftRoom({ roomID, agentID, engineId }) {
 		const options = {
 			where: {
 				_id: roomID,
@@ -162,7 +162,7 @@ class RoomService {
 		const action = Constants.ACTION.LEFT_ROOM;
 		const content = `${userName} has left this room.`;
 		await messageService.create({
-			nlpEngine,
+			engineId,
 			content,
 			action,
 			agent: agentID,
@@ -170,23 +170,23 @@ class RoomService {
 			room: roomID,
 		});
 		const botUserId = room.botUser._id.toString();
-		await messageService.unsetStopBot(botUserId, nlpEngine);
-		sendLeftRoom(nlpEngine);
+		await messageService.unsetStopBot(botUserId, engineId);
+		sendLeftRoom(engineId);
 		return room;
 	}
 
-	async getRoom({ roomId, nlpEngine }) {
+	async getRoom({ roomId, engineId }) {
 		let room = await roomRepository.getOne({
 			where: {
-				nlpEngine,
+				engineId,
 				_id: roomId,
 			},
-			fields: 'botUser channel note tags nlpEngine unreadMessages agents',
+			fields: 'botUser channel note tags engineId unreadMessages agents',
 		});
 		if (!room) {
 			throw new Error(Constants.ERROR.ROOM_NOT_FOUND);
 		}
-		room = await getRoomWithStopFlag(room, nlpEngine);
+		room = await getRoomWithStopFlag(room, engineId);
 		const botUser = await getBotUserByUserId(roomId);
 		if (room.isStopped) {
 			return {
@@ -196,7 +196,7 @@ class RoomService {
 			};
 		}
 
-		const suggestions = await messageService.getSuggestionRedis(roomId, nlpEngine);
+		const suggestions = await messageService.getSuggestionRedis(roomId, engineId);
 		return {
 			...room,
 			suggestions,
@@ -204,8 +204,8 @@ class RoomService {
 		};
 	}
 
-	async updateRoomById({ roomId, tags, note, nlpEngine, botUserId, name, phoneNumber, address }) {
-		const tagsCreated = await createTags(tags, nlpEngine);
+	async updateRoomById({ roomId, tags, note, engineId, botUserId, name, phoneNumber, address }) {
+		const tagsCreated = await createTags(tags, engineId);
 		const data = {
 			'tags': tagsCreated || [],
 			'note': note || '',
@@ -239,10 +239,10 @@ class RoomService {
 		return await roomRepository.getOneAndUpdate(options);
 	}
 
-	async stopBot(roomId, nlpEngine) {
+	async stopBot(roomId, engineId) {
 		const room = await roomRepository.getOne({
 			where: {
-				nlpEngine,
+				engineId,
 				_id: roomId,
 			},
 			fields: 'botUser',
@@ -252,13 +252,13 @@ class RoomService {
 		}
 		const botUser = room.botUser;
 		const botUserId = botUser._id.toString();
-		return messageService.setStopBot(roomId, botUserId, nlpEngine);
+		return messageService.setStopBot(roomId, botUserId, engineId);
 	}
 
-	async startBot(roomId, nlpEngine) {
+	async startBot(roomId, engineId) {
 		const room = await roomRepository.getOne({
 			where: {
-				nlpEngine,
+				engineId,
 				_id: roomId,
 			},
 			fields: 'botUser',
@@ -268,12 +268,12 @@ class RoomService {
 		}
 		const botUser = room.botUser;
 		const botUserId = botUser._id.toString();
-		return messageService.unsetStopBot(botUserId, nlpEngine);
+		return messageService.unsetStopBot(botUserId, engineId);
 	}
 
-	countUnassignedRooms(nlpEngine) {
+	countUnassignedRooms(engineId) {
 		return roomRepository.count({
-			nlpEngine,
+			engineId,
 			$or: [
 				{
 					agents: {
@@ -352,7 +352,7 @@ async function updateBotUserId({ botUserId, name, phoneNumber, address, tagsCrea
 	}
 }
 
-async function createTags(tags, nlpEngine) {
+async function createTags(tags, engineId) {
 	if (!tags) return [];
 	const tagsUnique = _.uniqBy(tags, 'content');
 	// find tags exist db.
@@ -366,7 +366,7 @@ async function createTags(tags, nlpEngine) {
 	const tagsNew = tagsUnique.reduce((initValue, currentValue) => {
 		const exist = existingTags.some(tag => tag.content == currentValue.content);
 		if (!exist) {
-			initValue.push({ content: currentValue.content, nlpEngine: nlpEngine });
+			initValue.push({ content: currentValue.content, engineId: engineId });
 		}
 		return initValue;
 	}, []);
@@ -380,13 +380,13 @@ async function createTags(tags, nlpEngine) {
 	return [...existingTags, ...tagsCreated];
 }
 
-async function getRoomWithConfig(rooms, nlpEngine) {
-	let validRooms = await getRoomsWithTimer(rooms, nlpEngine);
-	return await getRoomsWithStopFlag(validRooms, nlpEngine);
+async function getRoomWithConfig(rooms, engineId) {
+	let validRooms = await getRoomsWithTimer(rooms, engineId);
+	return await getRoomsWithStopFlag(validRooms, engineId);
 }
 
-async function getRoomsWithTimer(rooms, nlpEngine) {
-	const nlpEngineStr = nlpEngine.toString();
+async function getRoomsWithTimer(rooms, engineId) {
+	const nlpEngineStr = engineId.toString();
 	const keys = rooms.map(room => {
 		const id = room._id.toString();
 		const botUserId = _.get(room, 'botUser._id', '').toString();
@@ -402,8 +402,8 @@ async function getRoomsWithTimer(rooms, nlpEngine) {
 	});
 }
 
-async function getRoomsWithStopFlag(rooms, nlpEngine) {
-	const nlpEngineStr = nlpEngine.toString();
+async function getRoomsWithStopFlag(rooms, engineId) {
+	const nlpEngineStr = engineId.toString();
 	const keys = rooms.map(room => {
 		const botUserId = _.get(room, 'botUser._id', '').toString();
 		return `${Constants.REDIS.PREFIX.STOP_BOT}${botUserId}_${nlpEngineStr}`;
@@ -418,8 +418,8 @@ async function getRoomsWithStopFlag(rooms, nlpEngine) {
 	});
 }
 
-async function getRoomWithStopFlag(room, nlpEngine) {
-	const nlpEngineStr = nlpEngine.toString();
+async function getRoomWithStopFlag(room, engineId) {
+	const nlpEngineStr = engineId.toString();
 	const botUserId = _.get(room, 'botUser._id', '').toString();
 	const key = `${Constants.REDIS.PREFIX.STOP_BOT}${botUserId}_${nlpEngineStr}`;
 	const data = await getFromRedis(key);

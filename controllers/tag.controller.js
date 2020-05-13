@@ -5,8 +5,8 @@ const Constants = require('../common/constants');
 class TagControlelr {
     async getAll(req, res, next) {
         try {
-            const nlpEngine = req.nlpEngine._id;
-            const result = await tagService.getAll(nlpEngine);
+            const engineId = req.engine._id;
+            const result = await tagService.getAll(engineId);
             return ResponseSuccess(Constants.SUCCESS.GET_TAGS, result, res);
         } catch (error) {
             next(error);

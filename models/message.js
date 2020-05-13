@@ -20,7 +20,7 @@ const messageSchema = new mongoose.Schema({
 		ref: 'Room',
 		required: true,
 	},
-	nlpEngine: {
+	engineId: {
 		type: mongoose.SchemaTypes.ObjectId,
 		ref: 'NlpEngine',
 		required: true,
