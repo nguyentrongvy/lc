@@ -42,11 +42,11 @@ class NotificationController {
 
     async handleNotification(req, res, next) {
         try {
-            const { id: notiId } = req.params;
+            const { id: notificationId } = req.params;
             const agentId = req.user._id;
             const engineId = req.engine._id;
             const notification = await notificationService.handleNotification({
-                notiId,
+                notificationId,
                 agentId,
                 engineId,
             });

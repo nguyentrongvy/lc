@@ -83,7 +83,7 @@ class RoomService {
 		return await getRoomWithConfig(rooms, engineId);
 	}
 
-	async joinRoom({ roomID, agentID, engineId, adminID }) {
+	async joinRoom({ botUserId, roomID, agentID, engineId, adminID }) {
 		const options = {
 			where: {
 				$or: [
@@ -94,11 +94,15 @@ class RoomService {
 					},
 					{ agents: null },
 				],
-				_id: roomID,
 			},
 			fields: 'agents channel',
 			isLean: false,
 		};
+		if (roomID) {
+			options.where._id = roomID;
+		} else if (botUserId) {
+			options.where['botUser._id'] = botUserId;
+		}
 		const room = await roomRepository.getOne(options);
 		if (!room) {
 			throw new Error(Constants.ERROR.ROOM_NOT_FOUND);
@@ -113,8 +117,8 @@ class RoomService {
 			botUser,
 		] = await Promise.all([
 			usersService.getUser(agentID),
-			messageService.getSuggestionRedis(roomID, engineId),
-			getBotUserByUserId(roomID),
+			messageService.getSuggestionRedis(room._id.toString(), engineId),
+			getBotUserByUserId(room._id.toString()),
 		]);
 
 		let content;
@@ -130,7 +134,7 @@ class RoomService {
 			content,
 			action,
 			agent: agentID,
-			room: roomID,
+			room: room._id.toString(),
 			channel: room.channel,
 		});
 
@@ -139,7 +143,7 @@ class RoomService {
 			suggestions,
 			botUser,
 		}, message.toObject());
-		return message;
+		return message.toObject();
 	}
 
 	async leftRoom({ roomID, agentID, engineId }) {

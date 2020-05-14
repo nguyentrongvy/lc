@@ -18,10 +18,10 @@ const notificationSchema = new mongoose.Schema({
 		required: true,
 		ref: 'NlpEngine',
 	},
-	room: {
+	botUser: {
 		type: mongoose.SchemaTypes.ObjectId,
-		required: true,
-		ref: 'Room',
+		ref: 'BotUser',
+		require: true,
 	},
 	isHandled: {
 		type: Boolean,

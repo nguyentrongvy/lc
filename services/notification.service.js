@@ -27,42 +27,16 @@ class NotificationService {
         });
     }
 
-    async createNotification({ type, content, botUser, engineId, channel }) {
-        let room = await roomRepository.getOne({
-            where: {
-                'botUser._id': botUser._id,
-                engineId,
-            },
-            fields: '_id agents',
-        });
-
-        if (!room) {
-            room = await roomRepository.create({
-                channel,
-                engineId,
-                botUser: {
-                    _id: botUser._id,
-                    username: botUser.name || Constants.CHAT_CONSTANTS.DEFAULT_NAME,
-                },
-            });
-        }
+    async createNotification({ type, content, botUser, engineId }) {
 
         const dataNotification = {
             type,
             content,
             engineId,
-            room: room._id,
+            botUser: botUser._id,
         };
 
-        let receiver;
-
-        // if (room && type === Constants.NOTIFICATION.TYPES.JOIN_ROOM) {
-        //     const agent = _.get(room, 'agents[0]', '').toString();
-        //     dataNotification.isHandled = true;
-        //     receiver = agent;
-        // } else {
-        receiver = engineId;
-        // }
+        const receiver = engineId;
 
         const notification = await notificationRepository.create(dataNotification);
         sendNotification(receiver, notification.toObject());
@@ -70,11 +44,11 @@ class NotificationService {
         return notification;
     }
 
-    async handleNotification({ agentId, notiId, engineId }) {
+    async handleNotification({ agentId, notificationId, engineId }) {
         const notification = await notificationRepository.getOne({
             where: {
                 engineId,
-                _id: notiId,
+                _id: notificationId,
                 isHandled: false,
             },
             isLean: false,
@@ -84,11 +58,13 @@ class NotificationService {
             return;
         }
 
+
+        let additionalData;
         const type = notification.type;
         if (type === Constants.NOTIFICATION.TYPES.JOIN_ROOM) {
-            const roomID = notification.room;
-            await roomService.joinRoom({
-                roomID,
+            const botUserId = notification.botUser;
+            const message = await roomService.joinRoom({
+                botUserId,
                 engineId,
                 agentID: agentId,
             }).catch(err => {
@@ -97,12 +73,19 @@ class NotificationService {
                 }
                 console.error(err);
             });
+
+            if (message) {
+                additionalData = message.room;
+            }
         }
 
         notification.isHandled = true;
         await notification.save();
         sendNotification(engineId, notification.toObject());
-        return notification.toObject();
+        return {
+            ... notification.toObject(),
+            room: additionalData,
+        };
     }
 
     countNotification(engineId) {

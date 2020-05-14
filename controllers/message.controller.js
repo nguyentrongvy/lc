@@ -29,18 +29,20 @@ class MessageController {
 
 			if (isOffline || isNew) {
 				setImmediate(() => {
-					const validResponses = _.get(responses, '[0].channelResponses', '');
-					messageService.sendToBot({
-						room,
-						intents,
-						entities,
-						responses: validResponses,
+					const suggestions = {
+						responses,
+					};
+					messageService.sendMessageAuto({
+						suggestions,
+						engineId,
+						roomId: room._id.toString(),
 					}).catch(err => {
 						logger.error(err);
 					});
 				});
-			} else {
-				await messageService.emitMessage({
+			}
+
+			await messageService.emitMessage({
 					room,
 					message,
 					intents,
@@ -48,8 +50,7 @@ class MessageController {
 					engineId,
 					responses,
 					isNew,
-				});
-			}
+			});
 
 			return ResponseSuccess(Constants.SUCCESS.SEND_MESSAGE, message, res);
 		} catch (error) {
