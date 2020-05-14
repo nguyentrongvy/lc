@@ -27,7 +27,8 @@ class MessageController {
 				isOffline,
 			});
 
-			if (isOffline || isNew) {
+			const isUnassignedRoom = !room.agents || room.agents.length === 0;
+			if (isOffline || isUnassignedRoom) {
 				setImmediate(() => {
 					const suggestions = {
 						responses,
