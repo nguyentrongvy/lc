@@ -2,7 +2,7 @@ const { ResponseSuccess } = require('../helpers/response.helper');
 const notificationService = require('../services/notification.service');
 const Constants = require('../common/constants');
 
-class NotificationControlelr {
+class NotificationController {
     async getListNotification(req, res, next) {
         try {
             const { lastNotification } = req.query;
@@ -67,4 +67,4 @@ class NotificationControlelr {
     }
 }
 
-module.exports = new NotificationControlelr();
+module.exports = new NotificationController();
