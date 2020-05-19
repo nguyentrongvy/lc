@@ -134,12 +134,14 @@ class RoomController {
 				name,
 				phoneNumber,
 				address,
+				email,
 			} = req.body;
 			const data = await roomService.updateRoomById({
 				tags,
 				note,
 				botUserId,
 				name,
+				email,
 				phoneNumber,
 				address,
 				roomId,

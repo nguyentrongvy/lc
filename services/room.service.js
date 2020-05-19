@@ -208,12 +208,12 @@ class RoomService {
 		};
 	}
 
-	async updateRoomById({ roomId, tags, note, engineId, botUserId, name, phoneNumber, address }) {
+	async updateRoomById({ roomId, tags, note, engineId, botUserId, name, phoneNumber, address, email }) {
 		const tagsCreated = await createTags(tags, engineId);
 		const data = {
 			'tags': tagsCreated || [],
 			'note': note || '',
-			'botUser.username': name || '',
+			'botUser.username': name || Constants.CHAT_CONSTANTS.DEFAULT_NAME,
 		};
 		const options = {
 			where: {
@@ -224,7 +224,7 @@ class RoomService {
 		};
 
 		// TODO: update botUser
-		await updateBotUserId({ botUserId, name, phoneNumber, address, tagsCreated });
+		await updateBotUserId({ botUserId, name, phoneNumber, address, tagsCreated, email });
 
 		return await roomRepository.getOneAndUpdate(options);
 	}
@@ -327,13 +327,14 @@ async function getBotUserByUserId(roomID) {
 	return botUser;
 }
 
-async function updateBotUserId({ botUserId, name, phoneNumber, address, tagsCreated }) {
+async function updateBotUserId({ botUserId, name, phoneNumber, address, tagsCreated, email }) {
 	try {
 		const data = {
 			name,
 			phoneNumber,
 			address,
 			tagsCreated,
+			email,
 		};
 		const url = `${process.env.NLP_SERVER}/v1/bot/users/${botUserId}`;
 		const headers = {
