@@ -21,23 +21,19 @@ exports.sendMessage = ({
         responses,
         isNew,
     };
+    const dataEmit = {
+        payload,
+    };
+
     if (!agentId) {
-        socketEmitter.to(engineId).emit(
-            Constants.EVENT.CHAT,
-            {
-                payload,
-                type: Constants.EVENT_TYPE.SEND_UNASSIGNED_CHAT,
-            },
-        );
+        dataEmit.type = Constants.EVENT_TYPE.SEND_UNASSIGNED_CHAT;
     } else {
-        socketEmitter.to(agentId.toString()).emit(
-            Constants.EVENT.CHAT,
-            {
-                payload,
-                type: Constants.EVENT_TYPE.SEND_USER_MESSAGE,
-            },
-        );
+        dataEmit.type = Constants.EVENT_TYPE.SEND_USER_MESSAGE;
     }
+    socketEmitter.to(engineId).emit(
+        Constants.EVENT.CHAT,
+        dataEmit,
+    );
 };
 
 exports.sendBotMessage = (receiver, dataEmit) => {

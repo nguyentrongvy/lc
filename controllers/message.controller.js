@@ -44,13 +44,13 @@ class MessageController {
 			}
 
 			await messageService.emitMessage({
-					room,
-					message,
-					intents,
-					entities,
-					engineId,
-					responses,
-					isNew,
+				room,
+				message,
+				intents,
+				entities,
+				engineId,
+				responses,
+				isNew,
 			});
 
 			return ResponseSuccess(Constants.SUCCESS.SEND_MESSAGE, message, res);
