@@ -37,6 +37,7 @@ const constants = {
 	CHANNEL: {
 		WEB: 'web',
 		FB: 'facebook',
+		ZALO: 'zalo',
 	},
 	ACTION: {
 		CHAT: 'chat',
