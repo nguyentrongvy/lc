@@ -18,6 +18,7 @@ async function authenticationUser(socket, next) {
 		}
 
 		socket.user = verifiedData.user;
+		socket.org = verifiedData.org;
 		socket.engine = {
 			_id: botId,
 		};

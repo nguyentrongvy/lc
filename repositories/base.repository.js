@@ -115,7 +115,7 @@ module.exports = class BaseRepository {
 
 	count(options) {
 		const newOptions = Object.assign({
-			deleletedAt: null
+			deletedAt: null
 		}, options);
 
 		return this.model.countDocuments(newOptions);
@@ -124,11 +124,22 @@ module.exports = class BaseRepository {
 	updateOne(options) {
 		const newOptions = { ...options };
 		newOptions.where = Object.assign({}, {
-			deleletedAt: null
+			deletedAt: null
 		}, newOptions.where);
 		newOptions.options = Object.assign({}, {
 			new: true
 		}, newOptions.options);
 		return this.model.updateOne(newOptions.where, newOptions.data, newOptions.options);
+	}
+
+	updateMany(options) {
+		const newOptions = { ...options };
+		newOptions.where = Object.assign({}, {
+			deletedAt: null
+		}, newOptions.where);
+		newOptions.options = Object.assign({}, {
+			new: true
+		}, newOptions.options);
+		return this.model.updateMany(newOptions.where, newOptions.data, newOptions.options);
 	}
 };

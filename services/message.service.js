@@ -20,55 +20,6 @@ const {
 } = require('../services/socket-emitter.service');
 
 class MessageService {
-	async sendMessage({ botUser, engineId, content, channel, isOffline }) {
-		const { isNew, room } = await getRoom({ botUser, engineId, channel });
-		const roomID = room._id;
-		const botUserId = botUser._id;
-
-		const validContent = convertContent(content);
-		const message = await this.create({
-			channel,
-			engineId,
-			room: roomID,
-			botUser: botUserId,
-			content: validContent,
-		});
-
-		const unreadMessages = (room.unreadMessages || 0) + 1;
-		await roomRepository.updateOne({
-			where: {
-				_id: roomID,
-			},
-			data: {
-				unreadMessages,
-				lastMessage: message._id,
-			},
-		});
-
-		if (!isOffline) {
-			await this.setTimeoutResponse(roomID, botUser._id, engineId);
-		}
-
-		const isStoppedBot = await this.checkBotHasStop(
-			botUser._id.toString(),
-			engineId.toString()
-		);
-
-		let expiredTime = new Date().getTime() + Constants.REDIS.ROOM.EXPIRE_TIME;
-		if (isStoppedBot) {
-			expiredTime = 0;
-		}
-		return {
-			isNew,
-			room: {
-				...room,
-				unreadMessages,
-				ttl: expiredTime,
-			},
-			message: message.toObject(),
-		};
-	}
-
 	create({ botUser, engineId, room, content, channel, action }) {
 		return messageRepository.create({
 			botUser: botUser,
@@ -147,13 +98,6 @@ class MessageService {
 	}
 
 	async sendAgentMessage({ agentId, roomId, content, engineId }) {
-		let validContent = content;
-		if (typeof validContent === 'object') {
-			if (_.isArray(validContent) && validContent.length === 0) {
-				return {};
-			}
-			validContent = JSON.stringify(content);
-		}
 		const room = await roomRepository.getOne({
 			where: {
 				engineId,
@@ -163,24 +107,17 @@ class MessageService {
 			fields: '_id channel lastMessage botUser unreadMessages engineId',
 			isLean: false,
 		});
+
 		if (!room) {
 			throw new Error(Constants.ERROR.ROOM_NOT_FOUND);
 		}
-		const message = await messageRepository.create({
-			engineId,
-			room: roomId,
-			agent: agentId,
-			channel: room.channel,
-			content: validContent,
-		});
 
-		room.lastMessage = message._id;
-		room.unreadMessages = 0;
-		await room.save();
-		return {
+		return createAgentMsgAndUpdateRoom({
+			content,
+			agentId,
+			engineId,
 			room,
-			message: message.toObject(),
-		};
+		});
 	}
 
 	async sendBotMessage({ roomId, content, engineId }) {
@@ -213,49 +150,61 @@ class MessageService {
 		};
 	}
 
-	async emitMessage({
-		room,
-		message,
+	async emitMessages({
+		dataChat,
 		intents,
 		entities,
 		responses,
-		engineId,
-		isNew,
+		masterBot,
 	}) {
-		const roomId = room._id;
-		const botUser = _.get(room, 'botUser._id', '').toString();
+		for (const { room } of dataChat) {
+			const roomId = room._id;
+			const botUser = _.get(room, 'botUser._id', '').toString();
+			const engineId = room.engineId.toString();
+			const isStopped = room.isStopped;
 
-		const isStoppedBot = await this.checkBotHasStop(botUser, engineId);
-		if (!isStoppedBot) {
-			const suggestions = await this.getSuggestionRedis(roomId, engineId);
-			if (
-				typeof suggestions === 'object'
-				&& 'responses' in suggestions
-				&& !!botUser
-			) {
-				await this.sendMessageAuto({ suggestions, roomId, engineId });
+			if (!isStopped) {
+				const suggestions = await this.getSuggestionRedis(roomId, engineId);
+				if (
+					typeof suggestions === 'object'
+					&& 'responses' in suggestions
+					&& !!botUser
+				) {
+					await this.sendMessageAuto({ suggestions, roomId, engineId });
+				}
 			}
 		}
 
-		if (intents && intents.length > 0) {
-			const dataStore = JSON.stringify({
-				intents,
-				entities,
-				responses,
-				text: message.content,
-			});
-			await hmSetToRedis(engineId.toString(), roomId.toString(), dataStore);
-		}
+		for (let index = 0; index < dataChat.length; index++) {
+			const { room, message } = dataChat[index];
+			const isNew = room.isNew;
+			const engineId = room.engineId.toString();
+			const dataSending = {
+				room,
+				message,
+				engineId,
+				isNew,
+				responses: responses[engineId],
+			};
+			if (index === 0) {
+				dataSending.intents = intents;
+				dataSending.entities = entities;
+			}
+			sendMessage(dataSending);
 
-		sendMessage({
-			room,
-			message,
-			intents,
-			entities,
-			responses,
-			engineId,
-			isNew,
-		});
+			if (intents && intents.length > 0) {
+				const dataStore = {
+					masterBot,
+					responses: responses[engineId],
+					text: message.content,
+				};
+				if (index === 0) {
+					dataStore.intents = intents;
+					dataStore.entities = entities;
+				}
+				await hmSetToRedis(engineId, room._id.toString(), JSON.stringify(dataStore));
+			}
+		}
 	}
 
 	async sendToBot({
@@ -338,16 +287,8 @@ class MessageService {
 		return delFromRedis(stopPrefix);
 	}
 
-	async checkBotHasStop(botUserId, engineId) {
-		const key = `${Constants.REDIS.PREFIX.STOP_BOT}${botUserId}_${engineId}`;
-		let dataStopBot = await getFromRedis(key);
-		try {
-			dataStopBot = JSON.parse(dataStopBot);
-			if (typeof dataStopBot === 'object') {
-				return dataStopBot.isStopped;
-			}
-		} catch (error) { }
-		return false;
+	checkBotHasStop(botUserId, engineId) {
+		return getsStatusBot(botUserId, engineId);
 	}
 
 	removeTimer(roomId, botUserId, engineId) {
@@ -357,6 +298,117 @@ class MessageService {
 
 	async sendMessageAuto({ suggestions, roomId, engineId }) {
 		const content = _.get(suggestions, 'responses[0].channelResponses', []);
+		const masterBot = _.get(suggestions, 'masterBot');
+
+		const room = await this.sendResponseToLiveChat({
+			roomId,
+			engineId,
+			content,
+		});
+		await this.sendToBot({
+			room,
+			responses: content,
+		});
+
+		if (masterBot && masterBot !== engineId) {
+			const botUser = _.get(room, 'botUser._id');
+			const masterRoom = await roomRepository.getOne({
+				where: {
+					'botUser._id': botUser,
+				},
+				fields: '_id',
+			});
+			await this.sendResponseToLiveChat({
+				content,
+				engineId: masterBot,
+				roomId: masterRoom._id.toString(),
+			});
+		}
+	}
+
+	async setTimeoutResponse(dataChat, botUserId) {
+		const promises = dataChat.map(({ room }) => {
+			const roomId = room._id.toString();
+			const engineId = room.engineId.toString();
+			return this.removeTimer(roomId, botUserId, engineId);
+		});
+		await Promise.all(promises);
+
+		const redisPromises = dataChat.map(({ room }) => {
+			const roomId = room._id.toString();
+			const engineId = room.engineId.toString();
+			return setExToRedis(
+				`${Constants.REDIS.PREFIX.ROOM}${roomId}_${botUserId}_${engineId}`,
+				parseInt(Constants.REDIS.ROOM.EXPIRE_TIME / 1000),
+				true,
+			);
+		});
+
+		return Promise.all(redisPromises);
+	}
+
+	async checkAgentOffline(engineId) {
+		if (!engineId) {
+			return true;
+		}
+		const status = await hmGetFromRedis(Constants.REDIS.HASHMAP.STATUS, engineId);
+		return status[0] !== 'true';
+	}
+
+	async createIncomingMsg({ botUser, listBot, content, channel, orgId }) {
+		let dataRooms = await getRooms({
+			botUser,
+			listBot,
+			channel,
+			orgId,
+		});
+
+		const botUserName = botUser.name || Constants.CHAT_CONSTANTS.DEFAULT_NAME;
+		const validContent = convertContent(content);
+
+		const dataMessages = await createNewMessages({
+			channel,
+			botUser: botUser._id,
+			content: validContent,
+			rooms: dataRooms,
+		});
+
+		dataRooms = await updateUnreadAndLastMsg({
+			botUserName,
+			rooms: dataRooms,
+			messages: dataMessages,
+		});
+
+		dataRooms = await updateExpiredTime({
+			botUserId: botUser._id,
+			rooms: dataRooms,
+		});
+
+		return dataRooms.map((room, index) => {
+			return {
+				room,
+				message: dataMessages[index],
+			};
+		});
+	}
+
+	async sendMessagesAuto({ dataChat, responses, listBot, masterBot }) {
+		for (let index = 0; index < listBot.length; index++) {
+			const { room } = dataChat.find(({ room }) => listBot[index] === room.engineId.toString());
+			const engineId = room.engineId.toString();
+			const roomId = room._id.toString();
+			await this.sendMessageAuto({
+				roomId,
+				engineId,
+				suggestions: {
+					masterBot,
+					responses: responses[engineId],
+				},
+			});
+		}
+	}
+
+	async sendResponseToLiveChat({ roomId, engineId, content }) {
 		const { room, message } = await this.sendBotMessage({
 			roomId,
 			engineId,
@@ -369,65 +421,117 @@ class MessageService {
 				room,
 			},
 		};
-		if (!room.agents ||room.agents.length === 0) {
+		if (!room.agents || room.agents.length === 0) {
 			dataEmit.type = Constants.EVENT_TYPE.SEND_UNASSIGNED_CHAT;
 		}
-		await this.sendToBot({
-			room,
-			responses: content,
-		});
+
 		sendBotMessage(engineId, dataEmit);
 		await removeSuggestions(roomId, engineId);
+		return room;
 	}
 
-	async setTimeoutResponse(roomId, botUserId, engineId) {
-		await this.removeTimer(roomId, botUserId, engineId);
-		return setExToRedis(
-			`${Constants.REDIS.PREFIX.ROOM}${roomId}_${botUserId}_${engineId}`,
-			parseInt(Constants.REDIS.ROOM.EXPIRE_TIME / 1000),
-			true,
-		);
-	}
+	async emitResponseToMaster({
+		engineId,
+		agentId,
+		content,
+		botUser,
+		orgId,
+	}) {
+		const roomMaster = await roomRepository.getOne({
+			where: {
+				orgId,
+				'botUser._id': botUser,
+				engineId: {
+					$ne: engineId,
+				},
+			},
+			fields: '_id channel lastMessage unreadMessages engineId',
+			isLean: false,
+		});
 
-	async checkAgentOffline(enginedId) {
-		const status = await hmGetFromRedis(Constants.REDIS.HASHMAP.STATUS, enginedId);
-		return status[0] !== 'true';
+		if (!roomMaster) {
+			return {};
+		}
+
+		const masterBot = roomMaster.engineId;
+
+		const { room, message } = await createAgentMsgAndUpdateRoom({
+			content,
+			agentId,
+			room: roomMaster,
+			engineId: masterBot,
+		});
+
+		const dataEmit = {
+			type: Constants.EVENT_TYPE.LAST_MESSAGE_AGENT,
+			payload: {
+				message,
+				room,
+			},
+		};
+
+		return {
+			masterBot,
+			dataEmit,
+		};
 	}
 }
 
-async function getRoom({ botUser, engineId, channel }) {
+async function getRooms({ botUser, listBot, channel, orgId }) {
 	const condition = {
-		engineId,
 		channel,
+		orgId,
+		engineId: listBot,
 		'botUser._id': botUser._id,
 	};
-	const existedRoom = await roomRepository.getOne({
+	let existedRooms = await roomRepository.getAll({
 		where: condition,
-		fields: '_id agents channel botUser',
-		isLean: false,
+		fields: '_id agents channel botUser engineId',
 	});
-	if (existedRoom) {
-		existedRoom.botUser.username = botUser.name || Constants.CHAT_CONSTANTS.DEFAULT_NAME;
-		await existedRoom.save();
-		return {
-			room: existedRoom.toObject(),
-			isNew: false,
-		};
+
+	const hasNewRoom = existedRooms.length < listBot.length;
+	let oldListBot = [];
+	let newListBot = [];
+	let newRooms = [];
+
+	oldListBot = existedRooms.map(room => room.engineId.toString());
+	if (hasNewRoom) {
+		newListBot = listBot.filter(bot => {
+			return !oldListBot.includes(bot);
+		});
 	}
 
-	const newRoom = await roomRepository.create({
-		engineId,
-		channel,
+	if (newListBot.length > 0) {
+		const dataRooms = newListBot.map(bot => ({
+			channel,
+			orgId,
+			engineId: bot,
+			botUser: {
+				_id: botUser._id,
+				username: botUser.name,
+			},
+		}));
+		newRooms = await roomRepository.create(dataRooms);
+	}
+
+	existedRooms = existedRooms.map(room => ({
+		...room,
 		botUser: {
 			_id: botUser._id,
-			username: botUser.name || Constants.CHAT_CONSTANTS.DEFAULT_NAME,
+			username: botUser.name,
 		},
-	});
+		isNew: false,
+	}));
 
-	return {
-		room: newRoom.toObject(),
+	newRooms = newRooms.map(room => ({
+		...room.toObject(),
 		isNew: true,
-	};
+	}));
+
+	return [
+		...existedRooms,
+		...newRooms,
+	];
 }
 
 function removeSuggestions(roomId, engineId) {
@@ -474,6 +578,117 @@ async function getMessagesByLastMessage(lastMessage, roomId) {
 	prevMessages = prevMessages.reverse();
 
 	return prevMessages.concat(nextMessages);
+}
+
+async function updateUnreadAndLastMsg({ rooms, messages, botUserName }) {
+	const messageIds = messages.map(message => message._id);
+	const promises = rooms.map((room, index) => {
+		const unreadMessages = (room.unreadMessages || 0) + 1;
+		const dataUpdate = {
+			unreadMessages,
+			lastMessage: messageIds[index],
+		};
+		if (!room.isNew) {
+			dataUpdate['botUser.username'] = botUserName;
+		}
+		return roomRepository.updateOne({
+			where: { _id: room._id },
+			data: dataUpdate,
+		});
+	});
+	await Promise.all(promises);
+	return rooms.map(room => ({
+		...room,
+		unreadMessages: (room.unreadMessages || 0) + 1,
+	}));
+}
+
+async function getsStatusBot(botUserId, engineId) {
+	const key = `${Constants.REDIS.PREFIX.STOP_BOT}${botUserId}_${engineId}`;
+	let dataStopBot = await getFromRedis(key);
+	try {
+		dataStopBot = JSON.parse(dataStopBot);
+		if (typeof dataStopBot === 'object') {
+			return dataStopBot.isStopped;
+		}
+	} catch (error) { }
+	return false;
+}
+
+async function updateExpiredTime({ rooms, botUserId }) {
+	const promises = rooms.map(room => {
+		return getsStatusBot(botUserId, room.engineId);
+	});
+
+	const statuses = await Promise.all(promises);
+
+	return rooms.map((room, index) => {
+		let expiredTime = new Date().getTime() + Constants.REDIS.ROOM.EXPIRE_TIME;
+		const isStopped = statuses[index];
+		if (isStopped) {
+			expiredTime = 0;
+		}
+		return {
+			...room,
+			isStopped,
+			ttl: expiredTime,
+		};
+	});
+}
+
+async function createNewMessages({
+	channel,
+	botUser,
+	content,
+	rooms,
+}) {
+	const promises = [];
+	for (const room of rooms) {
+		promises.push(
+			messageRepository.create({
+				botUser,
+				content,
+				channel,
+				room: room._id,
+				engineId: room.engineId,
+			})
+		);
+	}
+
+
+	const messages = await Promise.all(promises);
+	return messages.map(message => message.toObject());
+}
+
+function convertMessageToString(content) {
+	let validContent = content;
+	if (typeof validContent === 'object') {
+		if (_.isArray(validContent) && validContent.length === 0) {
+			return {};
+		}
+		validContent = JSON.stringify(content);
+	}
+
+	return validContent;
+}
+
+async function createAgentMsgAndUpdateRoom({ content, agentId, room, engineId }) {
+	const validContent = convertMessageToString(content);
+	const message = await messageRepository.create({
+		engineId,
+		room: room._id,
+		agent: agentId,
+		channel: room.channel,
+		content: validContent,
+	});
+
+	room.lastMessage = message._id;
+	room.unreadMessages = 0;
+	await room.save();
+	return {
+		room: room,
+		message: message.toObject(),
+	};
 }
 
 module.exports = new MessageService();

@@ -9,51 +9,71 @@ class MessageController {
 		try {
 			const {
 				botUser,
-				engineId,
 				content,
 				channel,
 				intents,
 				entities,
 				responses,
+				masterBot,
 			} = req.body;
 
-			const isOffline = await messageService.checkAgentOffline(engineId);
+			const orgId = req.org._id;
 
-			const { message, room, isNew } = await messageService.sendMessage({
-				botUser,
-				engineId,
-				content,
-				channel,
-				isOffline,
-			});
+			const isOffline = await messageService.checkAgentOffline(masterBot);
 
-			const isUnassignedRoom = !room.agents || room.agents.length === 0;
-			if (isOffline || isUnassignedRoom) {
-				setImmediate(() => {
-					const suggestions = {
-						responses,
-					};
-					messageService.sendMessageAuto({
-						suggestions,
-						engineId,
-						roomId: room._id.toString(),
-					}).catch(err => {
-						logger.error(err);
-					});
-				});
+			const listBot = getListBot(responses, masterBot);
+
+			if (listBot.length > 5) {
+				throw new Error('Redirect too many bots');
 			}
 
-			await messageService.emitMessage({
-				room,
-				message,
-				intents,
-				entities,
-				engineId,
-				responses,
-				isNew,
+			const botResponses = responses.reduce((acc, response) => {
+				const botId = response.botId;
+				if (!acc[botId]) {
+					acc[botId] = [];
+				}
+
+				acc[botId].push(response);
+				return acc;
+			}, {});
+
+			const dataChat = await messageService.createIncomingMsg({
+				botUser,
+				listBot,
+				content,
+				channel,
+				orgId,
 			});
 
-			return ResponseSuccess(Constants.SUCCESS.SEND_MESSAGE, message, res);
+
+			await messageService.setTimeoutResponse(dataChat, botUser._id);
+
+			await messageService.emitMessages({
+				intents,
+				entities,
+				dataChat,
+				masterBot,
+				responses: botResponses,
+			});
+
+			const isUnassignedMasterRoom = checkIsUnassignedRoom(dataChat, masterBot);
+			if (isOffline || isUnassignedMasterRoom) {
+				const bot = getBotNotMaster(masterBot, listBot);
+				const isBotOffline = await messageService.checkAgentOffline(bot);
+				const isUnassignedRoom = checkIsUnassignedRoom(dataChat, bot);
+				if (isBotOffline || isUnassignedRoom || isUnassignedMasterRoom) {
+					setImmediate(() => {
+						messageService.sendMessagesAuto({
+							dataChat,
+							listBot,
+							masterBot,
+							responses: botResponses,
+						});
+					});
+				}
+			}
+
+			return ResponseSuccess(Constants.SUCCESS.SEND_MESSAGE, null, res);
 		} catch (error) {
 			next(error);
 		}
@@ -91,6 +111,30 @@ class MessageController {
 			next(error);
 		}
 	}
+}
+
+function getListBot(responses, masterBot) {
+	let listBot = responses.map(response => response.botId);
+	listBot.push(masterBot);
+	return Array.from(new Set(listBot));
+}
+
+function getBotNotMaster(masterBot, listBot) {
+	return listBot.find(bot => bot !== masterBot);
+}
+
+function checkIsUnassignedRoom(dataChat, bot) {
+	const data = dataChat.find(data => {
+		const { room } = data;
+		return room.engineId.toString() === bot;
+	});
+
+	if (data) {
+		const { room } = data;
+		return room && (!room.agents || room.agents.length === 0);
+	}
+
+	return true;
 }
 
 module.exports = new MessageController();

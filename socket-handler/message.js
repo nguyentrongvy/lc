@@ -1,3 +1,5 @@
+const _ = require('lodash');
+
 const Constants = require('../common/constants');
 const messageService = require('../services/message.service');
 const roomService = require('../services/room.service');
@@ -14,8 +16,11 @@ exports.initEvent = (socket) => {
                         entities,
                         responses,
                     } = data.payload;
+
                     const agentId = socket.user._id;
                     const engineId = socket.engine._id;
+                    const orgId = socket.org._id;
+
                     await messageService.removeTimer(roomId, '*', engineId);
                     const { message, room } = await messageService.sendAgentMessage({
                         roomId,
@@ -37,6 +42,26 @@ exports.initEvent = (socket) => {
                         Constants.EVENT.CHAT,
                         dataEmit,
                     );
+
+                    const {
+                        masterBot,
+                        dataEmit: dataEmitToMaster,
+                    } = await messageService.emitResponseToMaster({
+                        roomId,
+                        orgId,
+                        engineId,
+                        agentId,
+                        content: responses,
+                        botUser: _.get(room, 'botUser._id'),
+                    });
+
+                    if (masterBot) {
+                        socket.broadcast.to(masterBot).emit(
+                            Constants.EVENT.CHAT,
+                            dataEmitToMaster,
+                        );
+                    }
+
                     await messageService.sendToBot({
                         room,
                         intents,

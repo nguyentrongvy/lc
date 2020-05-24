@@ -1,5 +1,7 @@
-const jwtHelper = require('../helpers/jwt.helper');
 const axios = require('axios');
+const _ = require('lodash');
+
+const jwtHelper = require('../helpers/jwt.helper');
 
 exports.verifyToken = async (req, res, next) => {
 	try {
@@ -40,6 +42,21 @@ exports.verifyToken = async (req, res, next) => {
 	} catch (error) {
 		next(error);
 	}
+};
+
+exports.verifyBotId = async (org, botId) => {
+	const data = {
+		org,
+		botId,
+	};
+
+	const url = `${process.env.NLP_SERVER}/api/v1/bots/verify`;
+	const res = await axios.post(url, data, {
+		headers: { authorization: process.env.SERVER_API_KEY },
+	});
+
+	const isVerified = _.get(res, 'data.data.isVerified', false);
+	return isVerified;
 };
 
 async function getNlpEngineById(engineId) {

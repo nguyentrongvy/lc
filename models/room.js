@@ -51,6 +51,10 @@ const roomSchema = new mongoose.Schema({
 	deletedAt: {
 		type: Date,
 	},
+	orgId: {
+		type: mongoose.SchemaTypes.ObjectId,
+		ref: 'Organizations'
+	},
 }, { timestamps: true });
 
 const Room = mongoose.model('Room', roomSchema);
