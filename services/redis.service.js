@@ -1,6 +1,9 @@
 const redis = require('redis');
 const client = redis.createClient();
 const { promisify } = require('util');
+
+const Constants = require('../common/constants');
+
 const getFromRedis = promisify(client.get).bind(client);
 const setToRedis = promisify(client.set).bind(client);
 const setExToRedis = promisify(client.setex).bind(client);
@@ -54,6 +57,23 @@ const getMultiKey = keys => {
     });
 };
 
+const publishStopBot = (botId, botUserId, status) => {
+    const data = {
+        botId,
+        botUserId,
+        status,
+    };
+    return new Promise((resolve, reject) => {
+        client.publish(Constants.REDIS.CHANNEL.STOP_BOT, JSON.stringify(data), (err) => {
+            if (err) {
+                return reject(err);
+            }
+
+            return resolve(true);
+        });
+    });
+};
+
 module.exports = {
     client,
     getFromRedis,
@@ -66,4 +86,5 @@ module.exports = {
     getTtlRedis,
     getMultiKey,
     notifyExpiredKey,
+    publishStopBot,
 };

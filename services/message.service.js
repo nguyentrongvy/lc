@@ -12,6 +12,7 @@ const {
 	hmGetFromRedis,
 	delFromRedis,
 	getFromRedis,
+	publishStopBot,
 } = require('../services/redis.service');
 const {
 	sendMessage,
@@ -274,6 +275,7 @@ class MessageService {
 
 		await this.removeTimer(roomId, botUserId, engineId);
 		sendClearTimer(roomId, engineId);
+		await publishStopBot(engineId, botUserId, stopStatus);
 
 		return setExToRedis(
 			stopPrefix,
@@ -326,7 +328,7 @@ class MessageService {
 		}
 	}
 
-	async setTimeoutResponse(dataChat, botUserId) {
+	async setTimeoutResponse(listBot, dataChat, botUserId) {
 		const promises = dataChat.map(({ room }) => {
 			const roomId = room._id.toString();
 			const engineId = room.engineId.toString();
@@ -334,17 +336,16 @@ class MessageService {
 		});
 		await Promise.all(promises);
 
-		const redisPromises = dataChat.map(({ room }) => {
+		for (let index = 0; index < listBot.length; index++) {
+			const { room } = dataChat.find(({ room }) => listBot[index] === room.engineId.toString());
 			const roomId = room._id.toString();
 			const engineId = room.engineId.toString();
-			return setExToRedis(
+			await setExToRedis(
 				`${Constants.REDIS.PREFIX.ROOM}${roomId}_${botUserId}_${engineId}`,
-				parseInt(Constants.REDIS.ROOM.EXPIRE_TIME / 1000),
+				parseInt(Constants.REDIS.ROOM.EXPIRE_TIME / 1000 + index),
 				true,
 			);
-		});
-
-		return Promise.all(redisPromises);
+		}
 	}
 
 	async checkAgentOffline(engineId) {
@@ -437,13 +438,16 @@ class MessageService {
 		botUser,
 		orgId,
 	}) {
+		const masterBot = await getMasterBot(engineId, orgId);
+		if (!masterBot) {
+			return {};
+		}
+
 		const roomMaster = await roomRepository.getOne({
 			where: {
 				orgId,
+				engineId: masterBot,
 				'botUser._id': botUser,
-				engineId: {
-					$ne: engineId,
-				},
 			},
 			fields: '_id channel lastMessage unreadMessages engineId',
 			isLean: false,
@@ -452,8 +456,6 @@ class MessageService {
 		if (!roomMaster) {
 			return {};
 		}
-
-		const masterBot = roomMaster.engineId;
 
 		const { room, message } = await createAgentMsgAndUpdateRoom({
 			content,
@@ -689,6 +691,17 @@ async function createAgentMsgAndUpdateRoom({ content, agentId, room, engineId })
 		room: room,
 		message: message.toObject(),
 	};
+}
+
+async function getMasterBot(botId, org) {
+	const url = `${process.env.NLP_SERVER}/api/v1/bots/master`;
+	const data = await axios.post(url, { botId, org }, {
+		headers: {
+			authorization: process.env.SERVER_API_KEY,
+		},
+	});
+
+	return _.get(data, 'data.data');
 }
 
 module.exports = new MessageService();

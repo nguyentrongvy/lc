@@ -71,6 +71,9 @@ const constants = {
 		HASHMAP: {
 			STATUS: 'status',
 		},
+		CHANNEL: {
+			STOP_BOT: 'stop_bot',
+		},
 	},
 	CHAT_CONSTANTS: {
 		DEFAULT_NAME: 'Guest',

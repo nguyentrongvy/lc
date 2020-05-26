@@ -28,6 +28,9 @@ class MessageController {
 			}
 
 			const botResponses = responses.reduce((acc, response) => {
+				if (!('channelResponses' in response)) {
+					return acc;
+				}
 				const botId = response.botId;
 				if (!acc[botId]) {
 					acc[botId] = [];
@@ -45,8 +48,7 @@ class MessageController {
 				orgId,
 			});
 
-
-			await messageService.setTimeoutResponse(dataChat, botUser._id);
+			await messageService.setTimeoutResponse(listBot, dataChat, botUser._id);
 
 			await messageService.emitMessages({
 				intents,
