@@ -28,7 +28,6 @@ class NotificationService {
     }
 
     async createNotification({ type, content, botUser, engineId }) {
-
         const dataNotification = {
             type,
             content,

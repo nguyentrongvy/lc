@@ -7,9 +7,14 @@ exports.initialize = (io) => {
 		try {
 			const userId = socket.user._id;
 			const engineId = socket.engine._id;
+
 			socket.join(userId);
 			socket.join(engineId);
-			await setStatusToRedis(engineId, true);
+
+			const countMultiDevicesOnline = numClientsInRoom(io, '/', engineId);
+			if (countMultiDevicesOnline === 1) {
+				await setStatusToRedis(engineId, true);
+			}
 			// ----------------------
 			// ------INIT EVENT------
 			// ----------------------

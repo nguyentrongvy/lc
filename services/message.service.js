@@ -427,7 +427,10 @@ class MessageService {
 		}
 
 		sendBotMessage(engineId, dataEmit);
+
+		const botUserId = _.get(room, 'botUser._id');
 		await removeSuggestions(roomId, engineId);
+		await this.removeTimer(roomId, botUserId.toString(), engineId);
 		return room;
 	}
 
