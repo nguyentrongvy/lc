@@ -122,6 +122,9 @@ class MessageService {
 	}
 
 	async sendBotMessage({ roomId, content, engineId }) {
+		if (!content || (Array.isArray(content) && content.length === 0)) {
+			return {};
+		}
 		const room = await roomRepository.getOneAndUpdate({
 			where: {
 				engineId,
@@ -299,32 +302,38 @@ class MessageService {
 	}
 
 	async sendMessageAuto({ suggestions, roomId, engineId }) {
-		const content = _.get(suggestions, 'responses[0].channelResponses', []);
+		const responses = _.get(suggestions, 'responses', []);
 		const masterBot = _.get(suggestions, 'masterBot');
+		for (const response of responses) {
+			const content = _.get(response, 'channelResponses');
+			if (!content || (Array.isArray(content) && content.length === 0)) {
+				continue;
+			}
 
-		const room = await this.sendResponseToLiveChat({
-			roomId,
-			engineId,
-			content,
-		});
-		await this.sendToBot({
-			room,
-			responses: content,
-		});
-
-		if (masterBot && masterBot !== engineId) {
-			const botUser = _.get(room, 'botUser._id');
-			const masterRoom = await roomRepository.getOne({
-				where: {
-					'botUser._id': botUser,
-				},
-				fields: '_id',
-			});
-			await this.sendResponseToLiveChat({
+			const room = await this.sendResponseToLiveChat({
+				roomId,
+				engineId,
 				content,
-				engineId: masterBot,
-				roomId: masterRoom._id.toString(),
 			});
+			await this.sendToBot({
+				room,
+				responses: content,
+			});
+
+			if (masterBot && masterBot !== engineId) {
+				const botUser = _.get(room, 'botUser._id');
+				const masterRoom = await roomRepository.getOne({
+					where: {
+						'botUser._id': botUser,
+					},
+					fields: '_id',
+				});
+				await this.sendResponseToLiveChat({
+					content,
+					engineId: masterBot,
+					roomId: masterRoom._id.toString(),
+				});
+			}
 		}
 	}
 
@@ -415,6 +424,9 @@ class MessageService {
 			engineId,
 			content,
 		});
+		if (!room) {
+			return {};
+		}
 		const dataEmit = {
 			type: Constants.EVENT_TYPE.LAST_MESSAGE_AGENT,
 			payload: {
@@ -647,6 +659,9 @@ async function createNewMessages({
 	content,
 	rooms,
 }) {
+	if (!content || (Array.isArray(content) && content.length === 0)) {
+		return [];
+	}
 	const promises = [];
 	for (const room of rooms) {
 		promises.push(
