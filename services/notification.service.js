@@ -21,7 +21,7 @@ class NotificationService {
 
         return notificationRepository.getMany({
             where: condition,
-            fields: 'content type createdAt room isHandled',
+            fields: 'content type createdAt botUser isHandled',
             sort: '-createdAt',
             limit: Constants.NOTIFICATION.LIMIT,
         });
@@ -48,7 +48,6 @@ class NotificationService {
             where: {
                 engineId,
                 _id: notificationId,
-                isHandled: false,
             },
             isLean: false,
         });
@@ -57,10 +56,9 @@ class NotificationService {
             return;
         }
 
-
         let additionalData;
         const type = notification.type;
-        if (type === Constants.NOTIFICATION.TYPES.JOIN_ROOM) {
+        if (type === Constants.NOTIFICATION.TYPES.JOIN_ROOM && !notification.isHandled) {
             const botUserId = notification.botUser;
             const message = await roomService.joinRoom({
                 botUserId,
@@ -78,11 +76,23 @@ class NotificationService {
             }
         }
 
+        if (!additionalData) {
+            const room = await roomRepository.getOne({
+                where: {
+                    engineId,
+                    'botUser._id': notification.botUser,
+                },
+                fields: '_id',
+            });
+
+            additionalData = _.get(room, '_id');
+        }
+
         notification.isHandled = true;
         await notification.save();
         sendNotification(engineId, notification.toObject());
         return {
-            ... notification.toObject(),
+            ...notification.toObject(),
             room: additionalData,
         };
     }
