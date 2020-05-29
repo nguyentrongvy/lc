@@ -86,6 +86,7 @@ class RoomService {
 	async joinRoom({ botUserId, roomID, agentID, engineId, adminID }) {
 		const options = {
 			where: {
+				engineId,
 				$or: [
 					{
 						agents: {
@@ -149,6 +150,7 @@ class RoomService {
 	async leftRoom({ roomID, agentID, engineId }) {
 		const options = {
 			where: {
+				engineId,
 				_id: roomID,
 				agents: agentID,
 			},
@@ -217,6 +219,7 @@ class RoomService {
 		};
 		const options = {
 			where: {
+				engineId,
 				_id: roomId,
 			},
 			data,

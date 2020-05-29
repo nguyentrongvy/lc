@@ -325,6 +325,7 @@ class MessageService {
 				const masterRoom = await roomRepository.getOne({
 					where: {
 						'botUser._id': botUser,
+						engineId: masterBot,
 					},
 					fields: '_id',
 				});
