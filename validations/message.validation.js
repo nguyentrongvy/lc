@@ -13,6 +13,7 @@ exports.sendMessage = () => ({
 		intents: Joi.array().items(Joi.object().pattern(/.*/, [Joi.string(), Joi.number(), ''])),
 		entities: Joi.object().pattern(/.*/, Joi.array().items(Joi.object().pattern(/.*/, [Joi.string(), Joi.number(), '']))),
 		responses: Joi.array().items(Joi.object()),
+		pageId: Joi.string().allow(''),
 	}
 });
 

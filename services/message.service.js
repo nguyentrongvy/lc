@@ -160,6 +160,7 @@ class MessageService {
 		entities,
 		responses,
 		masterBot,
+		pageId,
 	}) {
 		for (const { room } of dataChat) {
 			const roomId = room._id;
@@ -199,6 +200,7 @@ class MessageService {
 			if (intents && intents.length > 0) {
 				const dataStore = {
 					masterBot,
+					pageId,
 					responses: responses[engineId],
 					text: message.content,
 				};
@@ -216,6 +218,7 @@ class MessageService {
 		intents,
 		entities,
 		responses,
+		pageId,
 	}) {
 		const userId = _.get(room, 'botUser._id', '').toString();
 		const engineId = _.get(room, 'engineId', '').toString();
@@ -244,6 +247,7 @@ class MessageService {
 			oldIntents,
 			entities,
 			oldEntities,
+			pageId,
 			responses: validResponses,
 		}, {
 			headers: {
@@ -304,6 +308,7 @@ class MessageService {
 	async sendMessageAuto({ suggestions, roomId, engineId }) {
 		const responses = _.get(suggestions, 'responses', []);
 		const masterBot = _.get(suggestions, 'masterBot');
+		const pageId = _.get(suggestions, 'pageId');
 		for (const response of responses) {
 			const content = _.get(response, 'channelResponses');
 			if (!content || (Array.isArray(content) && content.length === 0)) {
@@ -317,6 +322,7 @@ class MessageService {
 			});
 			await this.sendToBot({
 				room,
+				pageId,
 				responses: content,
 			});
 
@@ -403,7 +409,13 @@ class MessageService {
 		});
 	}
 
-	async sendMessagesAuto({ dataChat, responses, listBot, masterBot }) {
+	async sendMessagesAuto({
+		dataChat,
+		responses,
+		listBot,
+		masterBot,
+		pageId,
+	}) {
 		for (let index = 0; index < listBot.length; index++) {
 			const { room } = dataChat.find(({ room }) => listBot[index] === room.engineId.toString());
 			const engineId = room.engineId.toString();
@@ -413,6 +425,7 @@ class MessageService {
 				engineId,
 				suggestions: {
 					masterBot,
+					pageId,
 					responses: responses[engineId],
 				},
 			});

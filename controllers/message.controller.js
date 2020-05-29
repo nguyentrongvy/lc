@@ -15,6 +15,7 @@ class MessageController {
 				entities,
 				responses,
 				masterBot,
+				pageId,
 			} = req.body;
 
 			const orgId = req.org._id;
@@ -55,6 +56,7 @@ class MessageController {
 				entities,
 				dataChat,
 				masterBot,
+				pageId,
 				responses: botResponses,
 			});
 
@@ -69,6 +71,7 @@ class MessageController {
 							dataChat,
 							listBot,
 							masterBot,
+							pageId,
 							responses: botResponses,
 						});
 					});
