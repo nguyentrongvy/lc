@@ -14,7 +14,8 @@ exports.sendMessage = () => ({
 		entities: Joi.object().pattern(/.*/, Joi.array().items(Joi.object().pattern(/.*/, [Joi.string(), Joi.number(), '']))),
 		responses: Joi.array().items(Joi.object()),
 		pageId: Joi.string().allow(''),
-	}
+		faqResponses: Joi.array().items(Joi.object()),
+	},
 });
 
 exports.lastMessage = () => ({

@@ -161,6 +161,7 @@ class MessageService {
 		responses,
 		masterBot,
 		pageId,
+		faqResponses,
 	}) {
 		for (const { room } of dataChat) {
 			const roomId = room._id;
@@ -194,6 +195,7 @@ class MessageService {
 			if (index === 0) {
 				dataSending.intents = intents;
 				dataSending.entities = entities;
+				dataSending.faqResponses = faqResponses;
 			}
 			sendMessage(dataSending);
 
@@ -201,6 +203,7 @@ class MessageService {
 				const dataStore = {
 					masterBot,
 					pageId,
+					faqResponses,
 					responses: responses[engineId],
 					text: message.content,
 				};

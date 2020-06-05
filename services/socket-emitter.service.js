@@ -11,6 +11,7 @@ exports.sendMessage = ({
     responses,
     engineId,
     isNew,
+    faqResponses,
 }) => {
     const agentId = _.get(room, 'agents[0]', '').toString();
     const payload = {
@@ -20,6 +21,7 @@ exports.sendMessage = ({
         entities,
         responses,
         isNew,
+        faqResponses,
     };
     const dataEmit = {
         payload,
