@@ -39,6 +39,7 @@ const constants = {
 		FB: 'facebook',
 		ZALO: 'zalo',
 		Freshchat: 'freshchat',
+		Glia: 'glia',
 	},
 	ACTION: {
 		CHAT: 'chat',
