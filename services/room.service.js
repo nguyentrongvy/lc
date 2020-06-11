@@ -291,6 +291,16 @@ class RoomService {
 			],
 		});
 	}
+
+	getRoomByUserId(engineId, userId) {
+		return roomRepository.getOne({
+			where: {
+				engineId,
+				'botUser._id': userId,
+			},
+			fields: '_id',
+		});
+	}
 }
 
 module.exports = new RoomService();

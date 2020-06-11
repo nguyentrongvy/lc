@@ -1,11 +1,19 @@
 const validate = require('express-validation');
 
-const roomValidation = require('../validations/room.validation');
 const commonValidation = require('../validations/common.validation');
 const authMiddleware = require('../middlewares/authentication.middleware');
 const roomController = require('../controllers/room.controller');
 
 exports.load = (app) => {
+	app.get(
+		'/api/v1/users/:id/room',
+		[
+			validate(commonValidation.paramId()),
+			authMiddleware.verifyToken,
+		],
+		roomController.getRoomByUserId,
+	);
+
 	app.put(
 		'/api/v1/rooms/:id/stop',
 		[

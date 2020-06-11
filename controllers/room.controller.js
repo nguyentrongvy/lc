@@ -1,4 +1,6 @@
-const { ResponseSuccess } = require('../helpers/response.helper');
+const _ = require('lodash');
+
+const { ResponseSuccess, ResponseError } = require('../helpers/response.helper');
 const Constants = require('../common/constants');
 const roomService = require('../services/room.service');
 
@@ -180,6 +182,22 @@ class RoomController {
 			const engineId = req.engine._id;
 			const count = await roomService.countUnassignedRooms(engineId);
 			return ResponseSuccess(Constants.SUCCESS.COUNT_ROOMS, count, res);
+		} catch (error) {
+			next(error);
+		}
+	}
+
+	async getRoomByUserId(req, res, next) {
+		try {
+			const engineId = req.engine._id;
+			const userId = req.params.id;
+			const room = await roomService.getRoomByUserId(engineId, userId);
+			const roomId = _.get(room, '_id', '');
+			if (!roomId) {
+				return ResponseError(Constants.ERROR.GET_ROOM, res);
+			}
+
+			return ResponseSuccess(Constants.SUCCESS.GET_ROOM, roomId, res);
 		} catch (error) {
 			next(error);
 		}
