@@ -1,5 +1,5 @@
 const redis = require('redis');
-const client = redis.createClient();
+const client = redis.createClient(process.env.REDIS_HOST);
 const { promisify } = require('util');
 
 const Constants = require('../common/constants');
@@ -21,7 +21,7 @@ const notifyExpiredKey = callback => {
     );
 
     function subscribeExpired(e, r) {
-        const sub = redis.createClient();
+        const sub = redis.createClient(process.env.REDIS_HOST);
         const expiredSubKey = '__keyevent@0__:expired';
         sub.subscribe(expiredSubKey, function () {
             sub.on('message', async function (_chan, key) {
