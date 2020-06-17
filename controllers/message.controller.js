@@ -48,6 +48,7 @@ class MessageController {
 				content,
 				channel,
 				orgId,
+				pageId,
 			});
 
 			await messageService.setTimeoutResponse(listBot, dataChat, botUser._id);

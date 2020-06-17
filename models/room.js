@@ -55,6 +55,9 @@ const roomSchema = new mongoose.Schema({
 		type: mongoose.SchemaTypes.ObjectId,
 		ref: 'Organizations'
 	},
+	pageId: {
+		type: String,
+	},
 }, { timestamps: true });
 
 const Room = mongoose.model('Room', roomSchema);

@@ -105,7 +105,7 @@ class MessageService {
 				_id: roomId,
 				'agents': agentId,
 			},
-			fields: '_id channel lastMessage botUser unreadMessages engineId',
+			fields: '_id channel lastMessage botUser unreadMessages engineId pageId',
 			isLean: false,
 		});
 
@@ -375,12 +375,13 @@ class MessageService {
 		return status[0] !== 'true';
 	}
 
-	async createIncomingMsg({ botUser, listBot, content, channel, orgId }) {
+	async createIncomingMsg({ botUser, listBot, content, channel, orgId, pageId }) {
 		let dataRooms = await getRooms({
 			botUser,
 			listBot,
 			channel,
 			orgId,
+			pageId,
 		});
 
 		const botUserName = botUser.name || Constants.CHAT_CONSTANTS.DEFAULT_NAME;
@@ -511,7 +512,7 @@ class MessageService {
 	}
 }
 
-async function getRooms({ botUser, listBot, channel, orgId }) {
+async function getRooms({ botUser, listBot, channel, orgId, pageId }) {
 	const condition = {
 		channel,
 		orgId,
@@ -539,6 +540,7 @@ async function getRooms({ botUser, listBot, channel, orgId }) {
 		const dataRooms = newListBot.map(bot => ({
 			channel,
 			orgId,
+			pageId,
 			engineId: bot,
 			botUser: {
 				_id: botUser._id,

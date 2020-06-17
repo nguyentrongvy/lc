@@ -67,6 +67,7 @@ exports.initEvent = (socket) => {
                         intents,
                         entities,
                         responses,
+                        pageId: room.pageId,
                     });
                     return callback(null, message);
                 }
