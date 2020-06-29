@@ -382,7 +382,7 @@ async function createTags(tags, engineId) {
 		fields: "content",
 	});
 	const tagsNew = tagsUnique.reduce((initValue, currentValue) => {
-		const exist = existingTags.some(tag => tag.content == currentValue.content);
+		const exist = existingTags.some(tag => tag.content == currentValue.content && tag.engineId == engineId);
 		if (!exist) {
 			initValue.push({ content: currentValue.content, engineId: engineId });
 		}

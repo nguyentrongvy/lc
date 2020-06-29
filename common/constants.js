@@ -41,7 +41,7 @@ const constants = {
 		ZALO: 'zalo',
 		Freshchat: 'freshchat',
 		Glia: 'glia',
-		Custom:'custom',
+		Custom: 'custom',
 	},
 	ACTION: {
 		CHAT: 'chat',
@@ -67,6 +67,8 @@ const constants = {
 		PREFIX: {
 			ROOM: 'room_',
 			STOP_BOT: 'stoppedBot_',
+			PROACTIVE_MESSAGE: 'proactiveMessage_',
+			DATA_BOT_USER: 'dataBotUser_',
 		},
 		ROOM: {
 			EXPIRE_TIME: 15 * 1000, // ms

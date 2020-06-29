@@ -222,6 +222,8 @@ class MessageService {
 		entities,
 		responses,
 		pageId,
+		botUser,
+		isProactiveMessage,
 	}) {
 		const userId = _.get(room, 'botUser._id', '').toString();
 		const engineId = _.get(room, 'engineId', '').toString();
@@ -240,7 +242,20 @@ class MessageService {
 			entities: oldEntities,
 		} = await this.getSuggestionRedis(roomId, engineId);
 		await removeSuggestions(roomId, engineId);
+		if (!isProactiveMessage) {
+			const dataBotUserString = await getFromRedis(`${Constants.REDIS.PREFIX.DATA_BOT_USER}${botUser}`);
+			if (dataBotUserString) {
+				const dataBotUser = JSON.parse(dataBotUserString);
+				const messages = _.get(dataBotUser, "proactiveMessages");
+				if (messages && messages.length > 0) {
+					for (const message of messages) {
+						if (!message.expiredTime || isNaN(message.expiredTime) || message.expiredTime <= 0) continue;
 
+						setExToRedis(`${Constants.REDIS.PREFIX.PROACTIVE_MESSAGE}${botUser}_${engineId}_${pageId}_${message._id}`, parseInt(message.expiredTime), true);
+					}
+				}
+			}
+		}
 		const url = `${process.env.NLP_SERVER}/api/v1/agents/messages`;
 		await axios.post(url, {
 			text,
@@ -308,10 +323,11 @@ class MessageService {
 		return delFromRedis(key);
 	}
 
-	async sendMessageAuto({ suggestions, roomId, engineId }) {
+	async sendMessageAuto({ suggestions, roomId, engineId, isProactiveMessage }) {
 		const responses = _.get(suggestions, 'responses', []);
 		const masterBot = _.get(suggestions, 'masterBot');
 		const pageId = _.get(suggestions, 'pageId');
+
 		for (const response of responses) {
 			const content = _.get(response, 'channelResponses');
 			if (!content || (Array.isArray(content) && content.length === 0)) {
@@ -323,14 +339,16 @@ class MessageService {
 				engineId,
 				content,
 			});
+			const botUser = _.get(room, 'botUser._id');
 			await this.sendToBot({
 				room,
 				pageId,
 				responses: content,
+				botUser,
+				isProactiveMessage,
 			});
 
 			if (masterBot && masterBot !== engineId) {
-				const botUser = _.get(room, 'botUser._id');
 				const masterRoom = await roomRepository.getOne({
 					where: {
 						'botUser._id': botUser,
