@@ -1,4 +1,6 @@
 const _ = require('lodash');
+const axios = require('axios');
+const logger = require('./logger');
 
 const messageService = require('./message.service');
 const Constants = require('../common/constants');
@@ -43,7 +45,7 @@ exports.run = async (key) => {
 
             await handleUserNoResponse(botUserId, room._id, engineId, pageId, proactiveMesssageId, true);
         } catch (error) {
-            console.error(error);
+            logger.error(error);
         }
     }
 };
@@ -63,6 +65,9 @@ async function handleUserNoResponse(botUserId, roomId, engineId, pageId, message
     const message = proactiveMessages.find(m => m._id == messageId);
     if (!message || !message.responses || message.responses.length == 0) return;
 
+    const isActiveMessage = await isActiveProactiveMessage(message._id, engineId);
+    if (!isActiveMessage) return;
+
     await messageService.sendMessageAuto({
         suggestions: {
             pageId,
@@ -75,3 +80,24 @@ async function handleUserNoResponse(botUserId, roomId, engineId, pageId, message
         isProactiveMessage,
     });
 }
+
+async function isActiveProactiveMessage(messageId, engineId) {
+    try {
+        if (!messageId) return false;
+
+        const url = `${process.env.AUTH_SERVER}/v1/proactive-messages/${messageId}`;
+        const rs = await axios.get(url, {
+            headers: {
+                authorization: process.env.SERVER_API_KEY,
+                engineid: engineId,
+            }
+        });
+        const message = _.get(rs, 'data.data');
+        if (!message) return false;
+
+        return message.isActive;
+    } catch (error) {
+        logger.error(error);
+        return false;
+    }
+}   
