@@ -162,6 +162,8 @@ class MessageService {
 		masterBot,
 		pageId,
 		faqResponses,
+		allParameters,
+		nlpIntentsOriginal,
 	}) {
 		for (const { room } of dataChat) {
 			const roomId = room._id;
@@ -206,6 +208,8 @@ class MessageService {
 					faqResponses,
 					responses: responses[engineId],
 					text: message.content,
+					allParameters,
+					nlpIntentsOriginal,
 				};
 				if (index === 0) {
 					dataStore.intents = intents;
@@ -230,7 +234,6 @@ class MessageService {
 		const roomId = room._id.toString();
 		const channel = room.channel;
 
-
 		let validResponses = responses;
 		if (!_.isArray(responses)) {
 			validResponses = [responses];
@@ -240,6 +243,8 @@ class MessageService {
 			text,
 			intents: oldIntents,
 			entities: oldEntities,
+			nlpIntentsOriginal,
+			allParameters,
 		} = await this.getSuggestionRedis(roomId, engineId);
 		await removeSuggestions(roomId, engineId);
 		if (!isProactiveMessage) {
@@ -267,6 +272,8 @@ class MessageService {
 			oldEntities,
 			pageId,
 			responses: validResponses,
+			nlpIntentsOriginal,
+			allParameters,
 		}, {
 			headers: {
 				authorization: process.env.SERVER_API_KEY,
@@ -349,6 +356,7 @@ class MessageService {
 			});
 
 			if (masterBot && masterBot !== engineId) {
+				// TODO: remove suggestion in master
 				const masterRoom = await roomRepository.getOne({
 					where: {
 						'botUser._id': botUser,
@@ -437,6 +445,8 @@ class MessageService {
 		listBot,
 		masterBot,
 		pageId,
+		nlpIntentsOriginal,
+		allParameters,
 	}) {
 		for (let index = 0; index < listBot.length; index++) {
 			const { room } = dataChat.find(({ room }) => listBot[index] === room.engineId.toString());
@@ -449,6 +459,8 @@ class MessageService {
 					masterBot,
 					pageId,
 					responses: responses[engineId],
+					nlpIntentsOriginal,
+					allParameters,
 				},
 			});
 		}
@@ -477,7 +489,7 @@ class MessageService {
 		sendBotMessage(engineId, dataEmit);
 
 		const botUserId = _.get(room, 'botUser._id');
-		await removeSuggestions(roomId, engineId);
+		// await removeSuggestions(roomId, engineId);
 		await this.removeTimer(roomId, botUserId.toString(), engineId);
 		return room;
 	}

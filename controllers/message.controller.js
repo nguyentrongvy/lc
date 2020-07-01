@@ -17,6 +17,8 @@ class MessageController {
 				masterBot,
 				pageId,
 				faqResponses,
+				allParameters,
+				nlpIntentsOriginal,
 			} = req.body;
 
 			const orgId = req.org._id;
@@ -51,8 +53,6 @@ class MessageController {
 				pageId,
 			});
 
-			await messageService.setTimeoutResponse(listBot, dataChat, botUser._id);
-
 			await messageService.emitMessages({
 				intents,
 				entities,
@@ -60,8 +60,12 @@ class MessageController {
 				masterBot,
 				pageId,
 				faqResponses,
+				allParameters,
+				nlpIntentsOriginal,
 				responses: botResponses,
 			});
+
+			await messageService.setTimeoutResponse(listBot, dataChat, botUser._id);
 
 			const isUnassignedMasterRoom = checkIsUnassignedRoom(dataChat, masterBot);
 			if (isOffline || isUnassignedMasterRoom) {
@@ -75,6 +79,8 @@ class MessageController {
 							listBot,
 							masterBot,
 							pageId,
+							nlpIntentsOriginal,
+							allParameters,
 							responses: botResponses,
 						});
 					});
