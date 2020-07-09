@@ -9,46 +9,75 @@ const { getFromRedis } = require('./redis.service');
 const prefix = Constants.REDIS.PREFIX.ROOM;
 const prefixMessage = Constants.REDIS.PREFIX.PROACTIVE_MESSAGE;
 const roomService = require('./room.service');
+const broadcastMessageService = require('./broadcast-message.service');
 
 exports.run = async (key) => {
+    const [prefix] = key.split('_');
     const isRoom = isPrefixTypeOfKey(key, prefix);
     const isMessage = isPrefixTypeOfKey(key, prefixMessage);
+    switch (`${prefix}_`) {
+        case Constants.REDIS.PREFIX.ROOM:
+            try {
+                const [, roomId, botUserId, engineId] = key.split('_');
+                if (!roomId || !engineId) {
+                    return;
+                }
+
+                const isStoppedBot = await messageService.checkBotHasStop(botUserId, engineId);
+                if (isStoppedBot) {
+                    return;
+                }
+
+                const suggestions = await messageService.getSuggestionRedis(roomId, engineId);
+                if (typeof suggestions === 'object' && 'responses' in suggestions) {
+                    await messageService.sendMessageAuto({ suggestions, roomId, engineId });
+                }
+                break;
+            } catch (error) {
+                console.error(error);
+                break;
+            }
+
+        case Constants.REDIS.PREFIX.PROACTIVE_MESSAGE:
+            try {
+                const [, botUserId, engineId, pageId, proactiveMesssageId] = key.split('_');
+                if (!engineId || !pageId || !proactiveMesssageId) {
+                    return;
+                }
+                const room = await roomService.getRoomByUserId(engineId, botUserId);
+                if (!room) return;
+
+                await handleUserNoResponse(botUserId, room._id, engineId, pageId, proactiveMesssageId, true);
+                break;
+            } catch (error) {
+                logger.error(error);
+                break;
+            }
+
+        case Constants.REDIS.PREFIX.BROADCAST_MESSAGE:
+            try {
+                const [, engineId, orgId, broadcastMesssageId] = key.split('_');
+                const message = await broadcastMessageService.getById(broadcastMesssageId, engineId, orgId)
+                if (!message) return;
+
+                await broadcastMessageService.sendBroadcastMessage(message, engineId, orgId);
+                break;
+            } catch (error) {
+                logger.error(error);
+                break;
+            }
+        default:
+            break;
+    }
     if (isRoom) {
-        try {
-            const [, roomId, botUserId, engineId] = key.split('_');
-            if (!roomId || !engineId) {
-                return;
-            }
 
-            const isStoppedBot = await messageService.checkBotHasStop(botUserId, engineId);
-            if (isStoppedBot) {
-                return;
-            }
-
-            const suggestions = await messageService.getSuggestionRedis(roomId, engineId);
-            if (typeof suggestions === 'object' && 'responses' in suggestions) {
-                await messageService.sendMessageAuto({ suggestions, roomId, engineId });
-            }
-        } catch (error) {
-            console.error(error);
-        }
     }
 
     if (isMessage) {
-        try {
-            const [, botUserId, engineId, pageId, proactiveMesssageId] = key.split('_');
-            if (!engineId || !pageId || !proactiveMesssageId) {
-                return;
-            }
-            const room = await roomService.getRoomByUserId(engineId, botUserId);
-            if (!room) return;
 
-            await handleUserNoResponse(botUserId, room._id, engineId, pageId, proactiveMesssageId, true);
-        } catch (error) {
-            logger.error(error);
-        }
     }
 };
+
 
 function isPrefixTypeOfKey(key, prefix) {
     return key.startsWith(prefix);
@@ -100,4 +129,4 @@ async function isActiveProactiveMessage(messageId, engineId) {
         logger.error(error);
         return false;
     }
-}   
+}

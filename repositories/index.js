@@ -8,4 +8,5 @@ module.exports = {
 	messageRepository: new BaseRepository('Message'),
 	roomRepository: new BaseRepository('Room'),
 	notificationRepository: new BaseRepository('Notification'),
+	broadcastMessageRepository: new BaseRepository('BroadcastMessage'),
 };

@@ -298,7 +298,7 @@ class RoomService {
 				engineId,
 				'botUser._id': userId,
 			},
-			fields: '_id',
+			fields: '_id pageId',
 		});
 	}
 }

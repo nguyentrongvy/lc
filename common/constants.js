@@ -69,6 +69,7 @@ const constants = {
 			STOP_BOT: 'stoppedBot_',
 			PROACTIVE_MESSAGE: 'proactiveMessage_',
 			DATA_BOT_USER: 'dataBotUser_',
+			BROADCAST_MESSAGE: 'broadcastMessage_',
 		},
 		ROOM: {
 			EXPIRE_TIME: 15 * 1000, // ms
@@ -95,6 +96,10 @@ const constants = {
 			JOIN_ROOM: 'join_room',
 		},
 	},
+	ERROR_CODE: {
+		EXISTED_BROADCAST_MESSAGE: 1230,
+		WRONG_TIME: 1231,
+	}
 };
 
 module.exports = Object.freeze(constants);
