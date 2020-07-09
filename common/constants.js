@@ -99,7 +99,11 @@ const constants = {
 	ERROR_CODE: {
 		EXISTED_BROADCAST_MESSAGE: 1230,
 		WRONG_TIME: 1231,
-	}
+	},
+	GLOBAL_FIELDS: [
+		'name',
+		'phoneNumber',
+	],
 };
 
 module.exports = Object.freeze(constants);

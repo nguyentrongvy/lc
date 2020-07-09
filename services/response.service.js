@@ -1,6 +1,6 @@
 const axios = require('axios');
 const _ = require('lodash');
-
+const { GLOBAL_FIELDS } = require('../common/constants');
 class ResponseService {
   async getByIds(ids, engineId) {
     if (!ids || ids.length == 0) return;
@@ -78,6 +78,12 @@ class ResponseService {
         text = replaceGeneralParameter(redisInfo, allParameters, key, text);
       }
 
+    });
+
+    GLOBAL_FIELDS.forEach(field => {
+      const regex = new RegExp(`{userInfo\.${field}}`, 'g');
+      const fieldValue = redisInfo.userInfo && redisInfo.userInfo[field];
+      text = text.replace(regex, fieldValue || '');
     });
 
     return text;
