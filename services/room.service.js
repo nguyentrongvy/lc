@@ -228,7 +228,6 @@ class RoomService {
 
 		// TODO: update botUser
 		await updateBotUserId({ botUserId, name, phoneNumber, address, tagsCreated, email });
-
 		return await roomRepository.getOneAndUpdate(options);
 	}
 
@@ -373,13 +372,12 @@ async function updateBotUserId({ botUserId, name, phoneNumber, address, tagsCrea
 async function createTags(tags, engineId) {
 	if (!tags) return [];
 	const tagsUnique = _.uniqBy(tags, 'content');
+
 	// find tags exist db.
-	const inputTags = tagsUnique.map(tag => tag.content);
 	const existingTags = await tagRepository.getAll({
 		where: {
-			content: inputTags,
+			engineId: engineId,
 		},
-		fields: "content",
 	});
 	const tagsNew = tagsUnique.reduce((initValue, currentValue) => {
 		const exist = existingTags.some(tag => tag.content == currentValue.content && tag.engineId == engineId);
@@ -393,9 +391,11 @@ async function createTags(tags, engineId) {
 	if (tagsNew && tagsNew.length != 0) {
 		tagsCreated = await tagRepository.create(tagsNew);
 		tagsCreated = tagsCreated.map(({ _id, content }) => ({ _id, content }));
+		return [...existingTags, ...tagsCreated];
+	} else {
+		return [...tagsUnique];
 	}
-
-	return [...existingTags, ...tagsCreated];
+	
 }
 
 async function getRoomWithConfig(rooms, engineId) {
