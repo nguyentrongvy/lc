@@ -136,6 +136,10 @@ class BroadcastMessageService {
       const botPromise = botService.getBotByEngineId(engineId);
       const [botUsers, responses, bot] = await Promise.all([botUsersPromise, responsesPromise, botPromise]);
       let botChannel = _.get(bot, `channels.${message.channel}`);
+      if (message.channel == CHANNEL.FB) {
+        if (!botChannel.isActive) botChannel = _.get(bot, `channels.${CHANNEL.Messenger}`);
+      }
+
       if (!botChannel || !botChannel.isActive) {
         message.sentMessages = 0;
         await this.updateBroadcastMessage(message._id, message, engineId, orgId);

@@ -42,6 +42,7 @@ const constants = {
 		Freshchat: 'freshchat',
 		Glia: 'glia',
 		Custom: 'custom',
+		Messenger: 'messenger',
 	},
 	ACTION: {
 		CHAT: 'chat',
