@@ -379,23 +379,27 @@ async function createTags(tags, engineId) {
 			engineId: engineId,
 		},
 	});
+
+	if (!tagsUnique || tagsUnique.length == 0) return [];
+
 	const tagsNew = tagsUnique.reduce((initValue, currentValue) => {
 		const exist = existingTags.some(tag => tag.content == currentValue.content && tag.engineId == engineId);
 		if (!exist) {
-			initValue.push({ content: currentValue.content, engineId: engineId });
+			initValue.new.push({ content: currentValue.content, engineId: engineId });
+		} else {
+			initValue.exist.push(currentValue);
 		}
 		return initValue;
-	}, []);
+	}, { new: [], exist: [] });
 
 	let tagsCreated = [];
-	if (tagsNew && tagsNew.length != 0) {
-		tagsCreated = await tagRepository.create(tagsNew);
+	if (tagsNew.new && tagsNew.new.length != 0) {
+		tagsCreated = await tagRepository.create(tagsNew.new);
 		tagsCreated = tagsCreated.map(({ _id, content }) => ({ _id, content }));
-		return [...existingTags, ...tagsCreated];
+		return [...tagsNew.exist, ...tagsCreated];
 	} else {
-		return [...tagsUnique];
+		return [...tagsNew.exist];
 	}
-	
 }
 
 async function getRoomWithConfig(rooms, engineId) {
