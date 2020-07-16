@@ -43,6 +43,7 @@ const constants = {
 		Glia: 'glia',
 		Custom: 'custom',
 		Messenger: 'messenger',
+		Voice: 'voice',
 	},
 	ACTION: {
 		CHAT: 'chat',
