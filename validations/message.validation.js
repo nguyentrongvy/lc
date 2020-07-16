@@ -11,7 +11,7 @@ exports.sendMessage = () => ({
 		content: Joi.string().max(10000, 'utf8').required(),
 		channel: Joi.string().valid(...Object.values(Constants.CHANNEL)).required(),
 		intents: Joi.array().items(Joi.object().pattern(/.*/, [Joi.string(), Joi.number(), ''])),
-		entities: Joi.object().pattern(/.*/, Joi.array().items(Joi.object().pattern(/.*/, [Joi.string(), Joi.number(), '']))),
+		entities: Joi.object().pattern(/.*/, Joi.array().items(Joi.object())),
 		responses: Joi.array().items(Joi.object()),
 		pageId: Joi.string().allow(''),
 		faqResponses: Joi.array().items(Joi.object()),
