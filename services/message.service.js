@@ -164,6 +164,7 @@ class MessageService {
 		faqResponses,
 		allParameters,
 		nlpIntentsOriginal,
+		messageLogId,
 	}) {
 		for (const { room } of dataChat) {
 			const roomId = room._id;
@@ -210,6 +211,7 @@ class MessageService {
 					text: message.content,
 					allParameters,
 					nlpIntentsOriginal,
+					messageLogId,
 				};
 				if (index === 0) {
 					dataStore.intents = intents;
@@ -245,6 +247,7 @@ class MessageService {
 			entities: oldEntities,
 			nlpIntentsOriginal,
 			allParameters,
+			messageLogId,
 		} = await this.getSuggestionRedis(roomId, engineId);
 		await removeSuggestions(roomId, engineId);
 		if (!isProactiveMessage) {
@@ -271,6 +274,7 @@ class MessageService {
 			entities,
 			oldEntities,
 			pageId,
+			messageLogId,
 			responses: validResponses,
 			nlpIntentsOriginal,
 			allParameters,

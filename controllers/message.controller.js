@@ -19,6 +19,7 @@ class MessageController {
 				faqResponses,
 				allParameters,
 				nlpIntentsOriginal,
+				messageLogId,
 			} = req.body;
 
 			const orgId = req.org._id;
@@ -62,6 +63,7 @@ class MessageController {
 				faqResponses,
 				allParameters,
 				nlpIntentsOriginal,
+				messageLogId,
 				responses: botResponses,
 			});
 
