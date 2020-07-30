@@ -10,6 +10,7 @@ const constants = {
 		REQUIRED_FIELD: 'Username or password must not be empty.',
 		ROOM_NOT_FOUND: 'NOT_EXIST_ROOM',
 		INVALID_TOKEN: 'INVALID_TOKEN',
+		DATA_ERROR: 'Data_error',
 	},
 	SUCCESS: {
 		GET_LIST_USERS: 'Get list users successfully.',
@@ -31,6 +32,8 @@ const constants = {
 		CREATE_NOTIFICATION: 'CREATE_NOTIFICATION_SUCCESS',
 		HANDLE_NOTIFICATION: 'HANDLE_NOTIFICATION_SUCCESS',
 		GET_ROOM: 'GET_ROOM',
+		GET_RESPONSE_SUCCESS: 'GET_RESPONSE_SUCCESS',
+		CREATE_RESPONSE_SUCCESS: 'CREATE_RESPONSE_SUCCESS',
 	},
 	REGEX: {
 		OBJECT_ID: /^(?=[a-f\d]{24}$)(\d+[a-f]|[a-f]+\d)/i,
@@ -99,13 +102,24 @@ const constants = {
 		},
 	},
 	ERROR_CODE: {
-		EXISTED_BROADCAST_MESSAGE: 1230,
-		WRONG_TIME: 1231,
+		EXISTED_BROADCAST_MESSAGE: 1260,
+		EXISTED_BROADCAST_RESPONSE: 1270,
 	},
 	GLOBAL_FIELDS: [
 		'name',
 		'phoneNumber',
 	],
+
+	RESPONSE_TYPE: {
+		Text: 'text',
+		QuickReply: 'quick_replies',
+		CustomPayload: 'custom_payload',
+		Image: 'image',
+		Card: 'card',
+		Button: 'button',
+		RedirectIntent: 'redirect_intent',
+		RedirectBot: 'redirect_bot',
+	},
 };
 
 module.exports = Object.freeze(constants);

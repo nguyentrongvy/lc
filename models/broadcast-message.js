@@ -14,7 +14,7 @@ const BroadcastMessageSchema = new mongoose.Schema({
   }],
   responses: [{
     type: mongoose.SchemaTypes.ObjectId,
-    ref: 'Response',
+    ref: 'BroadcastResponse',
   }],
   channel: {
     type: String,

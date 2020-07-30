@@ -1,9 +1,9 @@
 const { broadcastMessageRepository } = require('../repositories');
 const { ERROR, ERROR_CODE, REDIS, CHANNEL } = require('../common/constants');
 const messageService = require('./message.service');
-const responseService = require('./response.service');
+const broadcastResponseService = require('./broadcast-response.service');
 const botUserService = require('./bot-user.service');
-const redisService = require('./redis.service');
+const { getFromRedis } = require('./redis.service');
 const roomService = require('./room.service');
 const logger = require('./logger/index');
 const botService = require('./bot.service');
@@ -52,27 +52,23 @@ class BroadcastMessageService {
       try {
         if (!message.scheduleTime) {
           message.sentMessages = 0;
-          await updateBroadcastMessage(message._id, message, engineId, orgId);
+          await this.updateBroadcastMessage(message._id, message, engineId, orgId);
           return;
         };
 
         const now = new Date().getTime();
-        const setDate = new Date(message.scheduleTime).getTime();
+        let setDate = new Date(message.scheduleTime);
+        setDate.setHours(setDate.getHours(), setDate.getMinutes(), 0);
+        setDate = setDate.getTime();
         if (isNaN(setDate) || isNaN(now)) {
           message.sentMessages = 0;
-          await updateBroadcastMessage(message._id, message, engineId, orgId);
+          await this.updateBroadcastMessage(message._id, message, engineId, orgId);
           return;
         }
 
         const time = parseInt((setDate - now) / 1000);
-        if (time <= 0 && time > -1000) {
+        if (time <= 0) {
           await this.sendBroadcastMessage(message, engineId, orgId);
-          return;
-        }
-
-        if (time < -1000) {
-          message.sentMessages = 0;
-          await updateBroadcastMessage(message._id, message, engineId, orgId);
           return;
         }
 
@@ -132,7 +128,7 @@ class BroadcastMessageService {
 
 
       const botUsersPromise = botUserService.getBotUserByEngineId(engineId);
-      const responsesPromise = responseService.getByIds(message.responses, engineId);
+      const responsesPromise = broadcastResponseService.getBroadcastResponseByIds(engineId, orgId, message.responses);
       const botPromise = botService.getBotByEngineId(engineId);
       const [botUsers, responses, bot] = await Promise.all([botUsersPromise, responsesPromise, botPromise]);
       let botChannel = _.get(bot, `channels.${message.channel}`);
@@ -184,7 +180,7 @@ class BroadcastMessageService {
       await this.updateBroadcastMessage(message._id, message, engineId, orgId);
     } catch (error) {
       logger.error(error);
-      const sentMessages = sentUsers.filter(u => u.isSent);
+      const sentMessages = sentUsers && sentUsers.length > 0 && sentUsers.filter(u => u.isSent) || [];
       message.sentMessages = sentMessages && sentMessages.length || 0;
       await this.updateBroadcastMessage(message._id, message, engineId, orgId);
     }
@@ -196,16 +192,16 @@ module.exports = new BroadcastMessageService();
 async function sendMessage(u, responses, engineId) {
   let sessionInfo;
   if (u.sessionId) {
-    const parameterString = await redisService.getFromRedis(u.sessionId);
+    const parameterString = await getFromRedis(u.sessionId);
     if (parameterString) sessionInfo = JSON.stringify(parameterString);
   };
   const redisInfo = {
-    userInfo: sessionInfo && sessionInfo.userInfo,
+    userInfo: sessionInfo && sessionInfo.userInfo || { name: u.name, phoneNumber: u.phoneNumber },
     queryResult: sessionInfo && sessionInfo.queryResult,
   }
   const allParameters = sessionInfo && sessionInfo.allParameters
   const replacedResponses = responses.map(r => {
-    if (r.text && r.text.length > 0) r.text = responseService.getRandomResponseText(r.text, allParameters, redisInfo);
+    if (r.text && r.text.length > 0) r.text = broadcastResponseService.getRandomResponseText(r.text, allParameters, redisInfo);
     return r;
   });
   const room = await roomService.getRoomByUserId(engineId, u._id);
