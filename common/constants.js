@@ -47,6 +47,8 @@ const constants = {
 		Custom: 'custom',
 		Messenger: 'messenger',
 		Voice: 'voice',
+		Kore: 'kore',
+		Freshdesk: 'freshdesk',
 	},
 	ACTION: {
 		CHAT: 'chat',
