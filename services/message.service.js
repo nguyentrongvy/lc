@@ -18,6 +18,7 @@ const {
 	sendMessage,
 	sendClearTimer,
 	sendBotMessage,
+	sendMaintenance,
 } = require('../services/socket-emitter.service');
 
 class MessageService {
@@ -152,6 +153,32 @@ class MessageService {
 			room: room.toObject(),
 			message: message.toObject(),
 		};
+	}
+
+	async verifyMaintenance(engineId) {
+		const maintenanceInfo = await getFromRedis(Constants.REDIS.PREFIX.LiveChatMaintenance);
+		const newMaintenanceInfo = JSON.parse(maintenanceInfo);
+		newMaintenanceInfo.engineId = engineId;
+		if (newMaintenanceInfo.isActive) {
+			const now = new Date();
+			if (new Date(newMaintenanceInfo.start) <= now && now <= new Date(newMaintenanceInfo.end)) {
+				await this.sendMaintenanceToLiveChat(newMaintenanceInfo);
+				return true;
+			}
+		}
+
+		await this.sendMaintenanceToLiveChat(newMaintenanceInfo);
+	}
+
+	async sendMaintenanceToLiveChat({ isActive, start, end, message, engineId }) {
+		const dataSending = {
+			status: isActive,
+			start,
+			end,
+			message,
+			engineId,
+		}
+		sendMaintenance(dataSending);
 	}
 
 	async emitMessages({

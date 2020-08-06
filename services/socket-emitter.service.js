@@ -88,3 +88,21 @@ exports.sendLeftRoom = engineId => {
         dataEmit,
     );
 };
+
+exports.sendMaintenance = ({ status, start, end, message, engineId }) => {
+    const payload = {
+        status,
+        start,
+        end,
+        message,
+    }
+
+    const dataEmit = {
+        payload,
+    };
+
+    socketEmitter.to(engineId).emit(
+        Constants.EVENT.Maintenance,
+        dataEmit,
+    );
+}

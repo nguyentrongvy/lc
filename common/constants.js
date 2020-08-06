@@ -58,6 +58,7 @@ const constants = {
 	EVENT: {
 		CHAT: 'chat',
 		NOTIFICATION: 'notification',
+		Maintenance: 'maintenance',
 	},
 	EVENT_TYPE: {
 		SEND_MESSAGE: 'send_message',
@@ -77,6 +78,7 @@ const constants = {
 			PROACTIVE_MESSAGE: 'proactiveMessage_',
 			DATA_BOT_USER: 'dataBotUser_',
 			BROADCAST_MESSAGE: 'broadcastMessage_',
+			LiveChatMaintenance: 'LiveChatMaintenance',
 		},
 		ROOM: {
 			EXPIRE_TIME: 15 * 1000, // ms
