@@ -157,6 +157,7 @@ class MessageService {
 
 	async verifyMaintenance(engineId) {
 		const maintenanceInfo = await getFromRedis(Constants.REDIS.PREFIX.LiveChatMaintenance);
+		if (!maintenanceInfo) return;
 		const newMaintenanceInfo = JSON.parse(maintenanceInfo);
 		newMaintenanceInfo.engineId = engineId;
 		if (newMaintenanceInfo.isActive) {
