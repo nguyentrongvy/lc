@@ -159,28 +159,19 @@ class MessageService {
 		const maintenanceInfo = await getFromRedis(Constants.REDIS.PREFIX.LiveChatMaintenance);
 		if (!maintenanceInfo) return;
 		const newMaintenanceInfo = JSON.parse(maintenanceInfo);
-		newMaintenanceInfo.engineId = engineId;
 		if (newMaintenanceInfo.isActive) {
 			const now = new Date();
 			if (new Date(newMaintenanceInfo.start) <= now && now <= new Date(newMaintenanceInfo.end)) {
-				await this.sendMaintenanceToLiveChat(newMaintenanceInfo);
+				newMaintenanceInfo.isMaintenance = true;
+				await this.sendMaintenanceToLiveChat(newMaintenanceInfo, engineId);
 				return true;
 			}
+			await sendMaintenance(newMaintenanceInfo, engineId);
+			return;
 		}
 
-		await this.sendMaintenanceToLiveChat(newMaintenanceInfo);
-	}
-
-	async sendMaintenanceToLiveChat({ isActive, start, end, message, engineId }) {
-		const dataSending = {
-			status: isActive,
-			start,
-			end,
-			message,
-			engineId,
-		}
-		sendMaintenance(dataSending);
-	}
+		await sendMaintenance('', engineId);
+	}	
 
 	async emitMessages({
 		dataChat,

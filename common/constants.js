@@ -78,7 +78,7 @@ const constants = {
 			PROACTIVE_MESSAGE: 'proactiveMessage_',
 			DATA_BOT_USER: 'dataBotUser_',
 			BROADCAST_MESSAGE: 'broadcastMessage_',
-			LiveChatMaintenance: 'LiveChatMaintenance',
+			LiveChatMaintenance: 'liveChatMaintenance',
 		},
 		ROOM: {
 			EXPIRE_TIME: 15 * 1000, // ms

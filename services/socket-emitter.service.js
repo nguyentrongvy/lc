@@ -89,12 +89,24 @@ exports.sendLeftRoom = engineId => {
     );
 };
 
-exports.sendMaintenance = ({ status, start, end, message, engineId }) => {
+exports.sendMaintenance = (maintenanceInfo, engineId) => {
+    if (!maintenanceInfo) {
+        const payload = '';
+        const dataEmit = {
+            payload,
+        }
+        return socketEmitter.to(engineId).emit(
+            Constants.EVENT.Maintenance,
+            dataEmit,
+        )
+    }
+
     const payload = {
-        status,
-        start,
-        end,
-        message,
+        status: maintenanceInfo.isActive,
+        start: maintenanceInfo.start,
+        end: maintenanceInfo.end,
+        message: maintenanceInfo.message,
+        isMaintenance: maintenanceInfo.isMaintenance || undefined,
     }
 
     const dataEmit = {
