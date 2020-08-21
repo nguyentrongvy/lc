@@ -163,7 +163,7 @@ class MessageService {
 			const now = new Date();
 			if (new Date(newMaintenanceInfo.start) <= now && now <= new Date(newMaintenanceInfo.end)) {
 				newMaintenanceInfo.isMaintenance = true;
-				await this.sendMaintenanceToLiveChat(newMaintenanceInfo, engineId);
+				await sendMaintenance(newMaintenanceInfo, engineId);
 				return true;
 			}
 			await sendMaintenance(newMaintenanceInfo, engineId);
