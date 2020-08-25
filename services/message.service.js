@@ -171,7 +171,7 @@ class MessageService {
 		}
 
 		await sendMaintenance('', engineId);
-	}	
+	}
 
 	async emitMessages({
 		dataChat,
@@ -227,7 +227,7 @@ class MessageService {
 					pageId,
 					faqResponses,
 					responses: responses[engineId],
-					text: message.content,
+					text: _.get(message, 'content'),
 					allParameters,
 					nlpIntentsOriginal,
 					messageLogId,
