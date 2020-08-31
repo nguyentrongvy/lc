@@ -49,6 +49,7 @@ const constants = {
 		Voice: 'voice',
 		Kore: 'kore',
 		Freshdesk: 'freshdesk',
+		Ivr: 'ivr',
 	},
 	ACTION: {
 		CHAT: 'chat',
