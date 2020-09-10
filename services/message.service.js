@@ -58,7 +58,7 @@ class MessageService {
 		const messages = await messageRepository.getMany({
 			where: condition,
 			sort: sortCondition,
-			fields: 'botUser agent content createdAt',
+			fields: 'botUser agent content createdAt action',
 		});
 
 		return messages;
