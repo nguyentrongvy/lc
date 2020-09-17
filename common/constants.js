@@ -125,6 +125,11 @@ const constants = {
 		RedirectIntent: 'redirect_intent',
 		RedirectBot: 'redirect_bot',
 	},
+	ACTOR: {
+		Agent: 'agent',
+		Bot: 'bot',
+		User: 'user',
+	},
 };
 
 module.exports = Object.freeze(constants);

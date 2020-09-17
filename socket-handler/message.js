@@ -71,6 +71,7 @@ exports.initEvent = (socket) => {
                         entities,
                         responses,
                         pageId: room.pageId,
+                        actor: Constants.ACTOR.Agent,
                     });
                     return callback(null, message);
                 }

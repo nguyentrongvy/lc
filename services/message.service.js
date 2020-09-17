@@ -249,6 +249,7 @@ class MessageService {
 		pageId,
 		botUser,
 		isProactiveMessage,
+		actor,
 	}) {
 		const userId = _.get(room, 'botUser._id', '').toString();
 		const engineId = _.get(room, 'engineId', '').toString();
@@ -294,9 +295,10 @@ class MessageService {
 			oldEntities,
 			pageId,
 			messageLogId,
-			responses: validResponses,
 			nlpIntentsOriginal,
 			allParameters,
+			actor,
+			responses: validResponses,
 		}, {
 			headers: {
 				authorization: process.env.SERVER_API_KEY,
