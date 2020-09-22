@@ -297,6 +297,7 @@ class MessageService {
 			messageLogId,
 			nlpIntentsOriginal,
 			allParameters,
+			isStartedByBot: isProactiveMessage,
 			actor,
 			responses: validResponses,
 		}, {
