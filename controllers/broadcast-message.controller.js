@@ -36,7 +36,7 @@ class BroadcastMessageController {
       const engineId = req.engine._id;
       const orgId = req.org._id;
       const data = req.body;
-      const result = await broadcastMessageService.updateProactiveMessage(id, data, engineId, orgId);
+      const result = await broadcastMessageService.updateBroadcastMessage(id, data, engineId, orgId, true);
       return ResponseSuccess('UPDATE_RESPONSE_SUCCESS', result, res);
     } catch (err) {
       logger.error(err);

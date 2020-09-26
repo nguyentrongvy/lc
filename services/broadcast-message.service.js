@@ -8,14 +8,21 @@ const roomService = require('./room.service');
 const logger = require('./logger/index');
 const botService = require('./bot.service');
 const _ = require('lodash');
-const { setExToRedis } = require('./redis.service');
+const { setExToRedis, delFromRedis } = require('./redis.service');
 
 class BroadcastMessageService {
-  async updateBroadcastMessage(id, data, engineId, orgId) {
+  async updateBroadcastMessage(id, data, engineId, orgId, isModified) {
     if (!id || !data || !data.name || !engineId || !orgId) throw new Error(ERROR.DATA_ERROR);
 
     const isDuplicated = await this.checkDuplicateMessageByName(data.name, engineId, orgId, id);
     if (isDuplicated) throw new Error(ERROR_CODE.EXISTED_BROADCAST_MESSAGE);
+
+    if (!data.isSent && isModified) {
+      const message = await this.getById(id, engineId, orgId);
+      if (!message) return;
+
+      if (message && !isNaN(message.sentMessages)) throw new Error(ERROR_CODE.SENT_BROADCAST_MESSAGE);
+    }
 
     const options = {
       where: {
@@ -25,7 +32,11 @@ class BroadcastMessageService {
       },
       data,
     };
-    await broadcastMessageRepository.updateOne(options);
+    const editedMessage = await broadcastMessageRepository.getOneAndUpdate(options);
+    if (isNaN(editedMessage.sentMessages) && isModified) {
+      delFromRedis(`${REDIS.PREFIX.BROADCAST_MESSAGE}${engineId}_${orgId}_${editedMessage._id}`);
+      await this.handleBroadcastMessage(editedMessage, engineId, orgId);
+    }
   }
 
   async createBroadcastMessage(data, engineId, orgId) {
@@ -39,44 +50,7 @@ class BroadcastMessageService {
 
     const message = await broadcastMessageRepository.create(data);
 
-    if (message.isAsap) {
-      try {
-        await this.sendBroadcastMessage(message, engineId, orgId);
-      } catch (error) {
-        logger.error(error);
-      }
-      return;
-    }
-
-    if (!message.isAsap) {
-      try {
-        if (!message.scheduleTime) {
-          message.sentMessages = 0;
-          await this.updateBroadcastMessage(message._id, message, engineId, orgId);
-          return;
-        };
-
-        const now = new Date().getTime();
-        let setDate = new Date(message.scheduleTime);
-        setDate.setHours(setDate.getHours(), setDate.getMinutes(), 0);
-        setDate = setDate.getTime();
-        if (isNaN(setDate) || isNaN(now)) {
-          message.sentMessages = 0;
-          await this.updateBroadcastMessage(message._id, message, engineId, orgId);
-          return;
-        }
-
-        const time = parseInt((setDate - now) / 1000);
-        if (time <= 0) {
-          await this.sendBroadcastMessage(message, engineId, orgId);
-          return;
-        }
-
-        setExToRedis(`${REDIS.PREFIX.BROADCAST_MESSAGE}${engineId}_${orgId}_${message._id}`, parseInt(time), true);
-      } catch (error) {
-        logger.error(error);
-      }
-    }
+    await this.handleBroadcastMessage(message, engineId, orgId);
   }
 
   async getById(id, engineId, orgId) {
@@ -125,7 +99,6 @@ class BroadcastMessageService {
         message.sentMessages = 0;
         return;
       };
-
 
       const botUsersPromise = botUserService.getBotUserByEngineId(engineId);
       const responsesPromise = broadcastResponseService.getBroadcastResponseByIds(engineId, orgId, message.responses);
@@ -180,9 +153,51 @@ class BroadcastMessageService {
       await this.updateBroadcastMessage(message._id, message, engineId, orgId);
     } catch (error) {
       logger.error(error);
-      const sentMessages = sentUsers && sentUsers.length > 0 && sentUsers.filter(u => u.isSent) || [];
-      message.sentMessages = sentMessages && sentMessages.length || 0;
+      message.sentMessages = 0;
       await this.updateBroadcastMessage(message._id, message, engineId, orgId);
+    }
+  }
+
+  async handleBroadcastMessage(message, engineId, orgId) {
+    if (!message || !engineId || !orgId) return;
+
+    if (message.isAsap) {
+      try {
+        await this.sendBroadcastMessage(message, engineId, orgId);
+      } catch (error) {
+        logger.error(error);
+      }
+      return;
+    }
+
+    if (!message.isAsap) {
+      try {
+        if (!message.scheduleTime) {
+          message.sentMessages = 0;
+          await this.updateBroadcastMessage(message._id, message, engineId, orgId);
+          return;
+        };
+
+        const now = new Date().getTime();
+        let setDate = new Date(message.scheduleTime);
+        setDate.setHours(setDate.getHours(), setDate.getMinutes(), 0);
+        setDate = setDate.getTime();
+        if (isNaN(setDate) || isNaN(now)) {
+          message.sentMessages = 0;
+          await this.updateBroadcastMessage(message._id, message, engineId, orgId);
+          return;
+        }
+
+        const time = parseInt((setDate - now) / 1000);
+        if (time <= 0) {
+          await this.sendBroadcastMessage(message, engineId, orgId);
+          return;
+        }
+
+        setExToRedis(`${REDIS.PREFIX.BROADCAST_MESSAGE}${engineId}_${orgId}_${message._id}`, parseInt(time), true);
+      } catch (error) {
+        logger.error(error);
+      }
     }
   }
 }
