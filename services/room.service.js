@@ -96,7 +96,6 @@ class RoomService {
 					{ agents: null },
 				],
 			},
-			fields: 'agents channel',
 			isLean: false,
 		};
 		if (roomID) {
