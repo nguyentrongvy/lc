@@ -96,20 +96,21 @@ class RoomService {
 					{ agents: null },
 				],
 			},
-			isLean: false,
+			fields: 'agents channel',
 		};
 		if (roomID) {
 			options.where._id = roomID;
 		} else if (botUserId) {
 			options.where['botUser._id'] = botUserId;
 		}
-		const room = await roomRepository.getOne(options);
+
+		options.data = {
+			agents: [agentID],
+		}
+		const room = await roomRepository.getOneAndUpdate(options);
 		if (!room) {
 			throw new Error(Constants.ERROR.ROOM_NOT_FOUND);
 		}
-
-		room.agents = [agentID];
-		await room.save();
 
 		const [
 			userName,
@@ -139,7 +140,7 @@ class RoomService {
 		});
 
 		sendJoinRoom(engineId, {
-			...room.toObject(),
+			...room,
 			suggestions,
 			botUser,
 		}, message.toObject());
