@@ -7,20 +7,8 @@ pipelines:
           caches:
             - node
           script:
-            - ssh -tt bitbucket-livechat@34.87.91.154<<EOF
-              sudo -s
-              /vnlp/bitbucket/livechat.sh
-              exit
-              exit
-              EOF
-    beta:
-      - step:
-          caches:
-            - node
-          script:
-            - ssh -tt bitbucket-livechat@34.87.94.31<<EOF
-              sudo -s
-              /vnlp/bitbucket/livechat.sh
+            - ssh -p 2204 root@113.176.195.87<<EOF
+              /vnlp/bitbucket/dev/livechat.sh
               exit
               exit
               EOF
