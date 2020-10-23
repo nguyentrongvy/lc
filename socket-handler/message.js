@@ -22,7 +22,8 @@ exports.initEvent = (socket) => {
                     const orgId = socket.org._id;
 
                     const isMaintenance = await messageService.verifyMaintenance(engineId);
-                    if (isMaintenance) return callback(new Error('System is under maintenance'));
+                    const isSystemAdmin = socket.user.isSystemAdmin;
+                    if (isMaintenance && !isSystemAdmin) return callback(new Error('System is under maintenance'));
 
                     await messageService.removeTimer(roomId, '*', engineId);
                     const { message, room } = await messageService.sendAgentMessage({
