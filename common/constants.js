@@ -50,6 +50,7 @@ const constants = {
 		Kore: 'kore',
 		Freshdesk: 'freshdesk',
 		Ivr: 'ivr',
+		VoiceGateway: 'voice_gateway',
 	},
 	ACTION: {
 		CHAT: 'chat',
