@@ -133,6 +133,7 @@ class BroadcastMessageService {
           if (!u.tags || u.tags.length == 0) return false;
 
           for (const tag of u.tags) {
+            if (!tag._id) continue;
             const t = message.tags.find(t => t._id.toString() == tag._id.toString());
             if (t) return true;
           }
