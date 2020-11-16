@@ -383,11 +383,11 @@ async function createTags(tags, engineId) {
 	if (!tagsUnique || tagsUnique.length == 0) return [];
 
 	const tagsNew = tagsUnique.reduce((initValue, currentValue) => {
-		const exist = existingTags.some(tag => tag.content == currentValue.content && tag.engineId == engineId);
+		const exist = existingTags.find(tag => tag.content == currentValue.content && tag.engineId == engineId);
 		if (!exist) {
 			initValue.new.push({ content: currentValue.content, engineId: engineId });
 		} else {
-			initValue.exist.push(currentValue);
+			initValue.exist.push(exist);
 		}
 		return initValue;
 	}, { new: [], exist: [] });
