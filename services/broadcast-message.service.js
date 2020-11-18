@@ -3,12 +3,13 @@ const { ERROR, ERROR_CODE, REDIS, CHANNEL } = require('../common/constants');
 const messageService = require('./message.service');
 const broadcastResponseService = require('./broadcast-response.service');
 const botUserService = require('./bot-user.service');
-const { getFromRedis } = require('./redis.service');
+const { getFromRedis, setToRedis } = require('./redis.service');
 const roomService = require('./room.service');
 const logger = require('./logger/index');
 const botService = require('./bot.service');
 const _ = require('lodash');
 const { setExToRedis, delFromRedis } = require('./redis.service');
+const scheduleService = require('./schedule.service');
 
 class BroadcastMessageService {
   async updateBroadcastMessage(id, data, engineId, orgId, isModified) {
@@ -180,22 +181,22 @@ class BroadcastMessageService {
         };
 
         const now = new Date().getTime();
-        let setDate = new Date(message.scheduleTime);
-        setDate.setHours(setDate.getHours(), setDate.getMinutes(), 0);
-        setDate = setDate.getTime();
-        if (isNaN(setDate) || isNaN(now)) {
+        const scheduledTime = new Date(new Date(message.scheduleTime).setSeconds(0));
+        if (!scheduledTime || isNaN(now)) {
           message.sentMessages = 0;
           await this.updateBroadcastMessage(message._id, message, engineId, orgId);
           return;
         }
 
-        const time = parseInt((setDate - now) / 1000);
+        const time = parseInt((scheduledTime.getTime() - now) / 1000);
         if (time <= 0) {
           await this.sendBroadcastMessage(message, engineId, orgId);
           return;
         }
 
-        setExToRedis(`${REDIS.PREFIX.BROADCAST_MESSAGE}${engineId}_${orgId}_${message._id}`, parseInt(time), true);
+        const key = `${REDIS.PREFIX.BROADCAST_MESSAGE}${engineId}_${orgId}_${message._id}`;
+        const url = `${process.env.LIVE_CHAT_SERVER}/v1/timer`;
+        scheduleService.createJob(url, 'POST', { key, }, scheduledTime, key);
       } catch (error) {
         logger.error(error);
       }

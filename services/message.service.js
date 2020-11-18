@@ -20,6 +20,8 @@ const {
 	sendBotMessage,
 	sendMaintenance,
 } = require('../services/socket-emitter.service');
+const dateTimeHelper = require('../helpers/date-time.helper');
+const scheduleService = require('./schedule.service');
 
 class MessageService {
 	create({ botUser, engineId, room, content, channel, action }) {
@@ -279,7 +281,10 @@ class MessageService {
 					for (const message of messages) {
 						if (!message.expiredTime || isNaN(message.expiredTime) || message.expiredTime <= 0) continue;
 
-						setExToRedis(`${Constants.REDIS.PREFIX.PROACTIVE_MESSAGE}${botUser}_${engineId}_${pageId}_${message._id}`, parseInt(message.expiredTime), true);
+						const scheduledTime = dateTimeHelper.addSecond(new Date(), parseInt(message.expiredTime));
+						const url = `${process.env.LIVE_CHAT_SERVER}/v1/timer`;
+						const key = `${Constants.REDIS.PREFIX.PROACTIVE_MESSAGE}${botUser}_${engineId}_${pageId}_${message._id}`;
+						scheduleService.createJob(url, 'POST', { key, }, scheduledTime, key);
 					}
 				}
 			}
@@ -353,7 +358,7 @@ class MessageService {
 
 	removeTimer(roomId, botUserId, engineId) {
 		const key = `${Constants.REDIS.PREFIX.ROOM}${roomId}_${botUserId}_${engineId}`;
-		return delFromRedis(key);
+		return scheduleService.deleteJob(key);
 	}
 
 	async sendMessageAuto({ suggestions, roomId, engineId, isProactiveMessage }) {
@@ -411,11 +416,11 @@ class MessageService {
 			const { room } = dataChat.find(({ room }) => listBot[index] === room.engineId.toString());
 			const roomId = room._id.toString();
 			const engineId = room.engineId.toString();
-			await setExToRedis(
-				`${Constants.REDIS.PREFIX.ROOM}${roomId}_${botUserId}_${engineId}`,
-				parseInt(Constants.REDIS.ROOM.EXPIRE_TIME / 1000 + index),
-				true,
-			);
+
+			const scheduledTime = dateTimeHelper.addSecond(new Date(), Constants.REDIS.ROOM.EXPIRE_TIME / 1000 + index);
+			const url = `${process.env.LIVE_CHAT_SERVER}/v1/timer`;
+			const key = `${Constants.REDIS.PREFIX.ROOM}${roomId}_${botUserId}_${engineId}`;
+			await scheduleService.createJob(url, 'POST', { key, }, scheduledTime, key);
 		}
 	}
 

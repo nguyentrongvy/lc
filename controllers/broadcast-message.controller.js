@@ -92,7 +92,7 @@ class BroadcastMessageController {
           updatedAt: -1,
         }
       }
-      
+
       const [totalData, responses] = await Promise.all([
         broadcastMessageRepository.count(condition),
         broadcastMessageRepository.getMany({
