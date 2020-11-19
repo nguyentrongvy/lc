@@ -40,14 +40,17 @@ exports.run = async (key) => {
 
         case Constants.REDIS.PREFIX.PROACTIVE_MESSAGE:
             try {
-                const [, botUserId, engineId, pageId, proactiveMesssageId] = key.split('_');
-                if (!engineId || !pageId || !proactiveMesssageId) {
+                let [, botUserId, engineId, pageId, proactiveMessageId] = key.split('_');
+
+                if (pageId == 'undefined') pageId = undefined;
+
+                if (!engineId || !proactiveMessageId) {
                     return;
                 }
                 const room = await roomService.getRoomByUserId(engineId, botUserId);
                 if (!room) return;
 
-                await handleUserNoResponse(botUserId, room._id, engineId, pageId, proactiveMesssageId, true);
+                await handleUserNoResponse(botUserId, room._id, engineId, pageId, proactiveMessageId, true);
                 break;
             } catch (error) {
                 logger.error(error);
@@ -56,8 +59,8 @@ exports.run = async (key) => {
 
         case Constants.REDIS.PREFIX.BROADCAST_MESSAGE:
             try {
-                const [, engineId, orgId, broadcastMesssageId] = key.split('_');
-                const message = await broadcastMessageService.getById(broadcastMesssageId, engineId, orgId)
+                const [, engineId, orgId, broadcastMessageId] = key.split('_');
+                const message = await broadcastMessageService.getById(broadcastMessageId, engineId, orgId)
                 if (!message) return;
 
                 await broadcastMessageService.sendBroadcastMessage(message, engineId, orgId);
