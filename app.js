@@ -26,6 +26,8 @@ module.exports = (settings) => {
 	// load static file
 	app.use(express.static('public'));
 
+	app.get('/health-check', (req, res) => res.json({ success: true }));
+
 	// load APIs
 	apis.load(app);
 
