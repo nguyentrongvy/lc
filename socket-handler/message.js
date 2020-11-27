@@ -3,6 +3,7 @@ const _ = require('lodash');
 const Constants = require('../common/constants');
 const messageService = require('../services/message.service');
 const roomService = require('../services/room.service');
+const logger = require('../services/logger');
 
 exports.initEvent = (socket) => {
     socket.on(Constants.EVENT.CHAT, async (data = {}, callback) => {
@@ -90,7 +91,7 @@ exports.initEvent = (socket) => {
                 }
             }
         } catch (error) {
-            console.error(error);
+            logger.error(error);
             callback(error);
         }
     });

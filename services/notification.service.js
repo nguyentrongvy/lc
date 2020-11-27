@@ -7,6 +7,7 @@ const {
 const Constants = require('../common/constants');
 const { sendNotification } = require('./socket-emitter.service');
 const roomService = require('./room.service');
+const logger = require('../services/logger');
 
 class NotificationService {
     getListNotification({ engineId, lastNotification }) {
@@ -68,7 +69,7 @@ class NotificationService {
                 if (err.message === Constants.ERROR.ROOM_NOT_FOUND) {
                     return;
                 }
-                console.error(err);
+                logger.error(err);
             });
 
             if (message) {

@@ -14,35 +14,35 @@ const models = require('../models');
 const server = require('./server');
 const { notifyExpiredKey } = require('../services/redis.service');
 const timerResponseBot = require('../services/timer.service');
-
+const logger = require('../services/logger');
 let connectionDB;
 
 const cleanup = (app) => () => {
 	app.close(() => {
-		console.log('Closed out remaining connections.');
+		logger.info('Closed out remaining connections.');
 		models.mongoose.connection.close();
 		process.exit(1);
 	});
 };
 
 process.on('uncaughtException', (err) => {
-	console.error('Unhandled Exception', err);
+	logger.error('Unhandled Exception', err);
 });
 
 process.on('uncaughtRejection', (err) => {
-	console.error('Unhandled Rejection', err);
+	logger.error('Unhandled Rejection', err);
 });
 
 models.connectDB(dbSettings)
 	.then((connection) => {
-		console.log('DB connected!');
+		logger.info('DB connected!');
 		connectionDB = connection;
 		return server.start(serverSettings);
 	})
 	.then((app) => {
-		console.log(`Server started succesfully, running on port: ${serverSettings.port}.`);
+		logger.info(`Server started succesfully, running on port: ${serverSettings.port}.`);
 		app.on('close', () => {
-			console.log('Server stopped.');
+			logger.info('Server stopped.');
 			connectionDB.disconnect();
 		});
 
@@ -52,6 +52,6 @@ models.connectDB(dbSettings)
 		process.on('SIGTERM', cleanup(app));
 	})
 	.catch((e) => {
-		console.error(e);
+		logger.error(e);
 		process.exit(1);
 	});

@@ -8,6 +8,7 @@ const helmet = require('helmet');
 const apis = require('./apis');
 const errorHanlder = require('./helpers/error-handler');
 const logger = require('.//services/logger');
+const httpLoggerMiddleware = require('./services/logger/morgan.service');
 
 module.exports = (settings) => {
 	const corsHeaders = settings.cors;
@@ -15,13 +16,19 @@ module.exports = (settings) => {
 	const app = express();
 
 	app.use(helmet());
-	app.use(morgan('dev'));
 	app.use(compression());
 	app.use(cors(corsHeaders));
 	app.options('*', cors(corsHeaders));
 
 	app.use(bodyParser.urlencoded({ extended: false }));
 	app.use(bodyParser.json({ type: 'application/json' }));
+
+	if (process.env.ENV === 'dev' || process.env.ENV === 'test') {
+		app.use(httpLoggerMiddleware.dev);
+	} else {
+		app.use(httpLoggerMiddleware.error);
+		app.use(httpLoggerMiddleware.common);
+	}
 
 	// load static file
 	app.use(express.static('public'));

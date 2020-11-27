@@ -12,7 +12,6 @@ class BroadcastMessageController {
       const result = await broadcastResponseService.createBroadcastResponse(data, engineId, orgId);
       return ResponseSuccess(SUCCESS.CREATE_RESPONSE_SUCCESS, result, res);
     } catch (err) {
-      logger.error(err);
       next(err);
     }
   }
@@ -26,7 +25,6 @@ class BroadcastMessageController {
 
       return ResponseSuccess(SUCCESS.GET_RESPONSE_SUCCESS, result, res);
     } catch (error) {
-      logger.error(error);
       next(error);
     }
   }
@@ -40,7 +38,6 @@ class BroadcastMessageController {
       
       return ResponseSuccess(SUCCESS.CREATE_RESPONSE_SUCCESS, result, res);
     } catch (err) {
-      logger.error(err);
       next(err);
     }
   }

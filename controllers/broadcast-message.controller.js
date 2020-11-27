@@ -25,7 +25,6 @@ class BroadcastMessageController {
       const result = await broadcastMessageService.createBroadcastMessage(data, engineId, orgId);
       return ResponseSuccess('UPDATE_RESPONSE_SUCCESS', result, res);
     } catch (err) {
-      logger.error(err);
       next(err);
     }
   }
@@ -39,7 +38,6 @@ class BroadcastMessageController {
       const result = await broadcastMessageService.updateBroadcastMessage(id, data, engineId, orgId, true);
       return ResponseSuccess('UPDATE_RESPONSE_SUCCESS', result, res);
     } catch (err) {
-      logger.error(err);
       next(err);
     }
   }
@@ -110,7 +108,6 @@ class BroadcastMessageController {
         recordsFiltered: totalData
       });
     } catch (error) {
-      logger.error(error);
       next(error);
     }
   }

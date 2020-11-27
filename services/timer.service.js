@@ -34,7 +34,7 @@ exports.run = async (key) => {
                 }
                 break;
             } catch (error) {
-                console.error(error);
+                logger.error(error);
                 break;
             }
 

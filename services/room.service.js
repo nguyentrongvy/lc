@@ -13,6 +13,7 @@ const {
 	getMultiKey,
 	getFromRedis,
 } = require('./redis.service');
+const logger = require('../services/logger');
 
 class RoomService {
 	async getUnassignedRooms({ page, limit, search, engineId, flag }) {
@@ -365,7 +366,7 @@ async function updateBotUserId({ botUserId, name, phoneNumber, address, tagsCrea
 			_id: botUser._id,
 		}
 	} catch (err) {
-		console.error(err);
+		logger.error(err);
 	}
 }
 

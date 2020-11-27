@@ -27,11 +27,11 @@ exports.initialize = (io) => {
 						await setStatusToRedis(engineId, false);
 					}
 				} catch (error) {
-					console.error(error);
+					logger.error(error);
 				}
 			});
 		} catch (error) {
-			console.error(error);
+			logger.error(error);
 		}
 	});
 };

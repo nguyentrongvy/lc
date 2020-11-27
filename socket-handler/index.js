@@ -3,6 +3,7 @@ const { initialize } = require('./initialize-socket');
 const jwtHelper = require('../helpers/jwt.helper');
 const Constants = require('../common/constants');
 const { verifyBotId } = require('../middlewares/authentication.middleware');
+const logger = require('../services/logger');
 
 async function authenticationUser(socket, next) {
 	try {
@@ -24,7 +25,6 @@ async function authenticationUser(socket, next) {
 		};
 		return next();
 	} catch (error) {
-		console.error(error);
 		return next(error);
 	}
 }
