@@ -1,15 +1,16 @@
-const convertError = (error) => {
-	switch (error.message) {
-	default:
-		return {
-			code: 400,
-			message: error.message,
-		};
+const convertError = (message) => {
+	switch (message) {
+		default:
+			return {
+				code: 400,
+				message: message,
+			};
 	}
 };
 
 module.exports = (logger) => (err, _req, res, _next) => {
-	logger.error(err, 'ERROR HANDLING CATCHING');
+	const errMessage = err && err.message;
+	logger.error(err, _req);
 
 	if (Array.isArray(err.errors)) {
 		const messages = err.errors.map((item) => item.messages);
@@ -18,7 +19,7 @@ module.exports = (logger) => (err, _req, res, _next) => {
 		});
 	}
 
-	const { code, message } = convertError(err);
+	const { code, message } = convertError(errMessage);
 	return res.status(code).json({
 		message,
 	});
