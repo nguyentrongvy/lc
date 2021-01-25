@@ -4,6 +4,7 @@ const Constants = require('../common/constants');
 const messageService = require('../services/message.service');
 const roomService = require('../services/room.service');
 const logger = require('../services/logger');
+const leftRoomJob = require('../jobs/room/left-room-job');
 
 exports.initEvent = (socket) => {
     socket.on(Constants.EVENT.CHAT, async (data = {}, callback) => {
@@ -68,6 +69,8 @@ exports.initEvent = (socket) => {
                             dataEmitToMaster,
                         );
                     }
+
+                    await leftRoomJob.handleLeftRoomJob(roomId, engineId);
 
                     await messageService.sendToBot({
                         room,

@@ -133,6 +133,9 @@ const constants = {
 		Bot: 'bot',
 		User: 'user',
 	},
+	JOBS: {
+		IdleRoom: 'idle-room',
+	}
 };
 
 module.exports = Object.freeze(constants);

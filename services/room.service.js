@@ -14,6 +14,7 @@ const {
 	getFromRedis,
 } = require('./redis.service');
 const logger = require('../services/logger');
+const leftRoomJob = require('../jobs/room/left-room-job');
 
 class RoomService {
 	async getUnassignedRooms({ page, limit, search, engineId, flag }) {
@@ -113,6 +114,8 @@ class RoomService {
 			throw new Error(Constants.ERROR.ROOM_NOT_FOUND);
 		}
 
+		await leftRoomJob.handleLeftRoomJob(roomID, engineId);
+
 		const [
 			userName,
 			suggestions,
@@ -139,6 +142,8 @@ class RoomService {
 			room: room._id.toString(),
 			channel: room.channel,
 		});
+
+		room.timeLeftInIdleRoom = await getTtlRedis([`LeftRoomJob-${roomID}`]);
 
 		sendJoinRoom(engineId, {
 			...room,
@@ -178,7 +183,39 @@ class RoomService {
 		});
 		const botUserId = room.botUser._id.toString();
 		await messageService.unsetStopBot(botUserId, engineId);
-		sendLeftRoom(engineId);
+		sendLeftRoom({ engineId, roomID });
+		return room;
+	}
+
+	async emptyRoom({ roomID, engineId }) {
+		const options = {
+			where: {
+				engineId,
+				_id: roomID,
+			},
+			data: {
+				agents: [],
+			},
+			fields: 'channel botUser',
+		};
+		const room = await roomRepository.getOneAndUpdate(options);
+		if (!room) {
+			throw new Error(Constants.ERROR.ROOM_NOT_FOUND);
+		}
+
+		const action = Constants.ACTION.LEFT_ROOM;
+		const content = `All assigned agents have left this room.`;
+		await messageService.create({
+			engineId,
+			content,
+			action,
+			channel: room.channel,
+			room: roomID,
+		});
+		const botUserId = room.botUser._id.toString();
+		await messageService.unsetStopBot(botUserId, engineId);
+		const isAfk = true;
+		sendLeftRoom({ engineId, roomID, isAfk });
 		return room;
 	}
 
@@ -203,11 +240,15 @@ class RoomService {
 			};
 		}
 
+		let timeLeftInIdleRoom;
+		if (room.agents.length > 0) timeLeftInIdleRoom = await getTtlRedis([`LeftRoomJob-${roomId}`]);
+
 		const suggestions = await messageService.getSuggestionRedis(roomId, engineId);
 		return {
 			...room,
 			suggestions,
 			botUser,
+			timeLeftInIdleRoom: timeLeftInIdleRoom && timeLeftInIdleRoom[0] || null,
 		};
 	}
 

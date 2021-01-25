@@ -2,6 +2,7 @@ const http = require('http');
 const socketio = require('socket.io');
 const redisAdapter = require('socket.io-redis');
 const appExpress = require('../app');
+const idleRoomConsumer = require('../jobs/room/idle-room-consumer');
 
 exports.start = (serverSettings) => new Promise((resolve) => {
 	const app = appExpress(serverSettings);
@@ -14,4 +15,6 @@ exports.start = (serverSettings) => new Promise((resolve) => {
 
 	const { port } = serverSettings;
 	server.listen(port, () => resolve(server));
+
+	idleRoomConsumer.addProcessJobs();
 });
