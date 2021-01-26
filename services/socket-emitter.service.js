@@ -78,12 +78,13 @@ exports.sendJoinRoom = (engineId, room, message) => {
     );
 };
 
-exports.sendLeftRoom = ({ engineId, roomID = null, isAfk = false }) => {
+exports.sendLeftRoom = ({ room, lastMessage, engineId, isAfk = false }) => {
     const dataEmit = {
         type: Constants.EVENT_TYPE.LEFT_ROOM,
         payload: {
-            roomId: roomID,
             isAfk: isAfk,
+            room,
+            message: lastMessage,
         },
     };
     socketEmitter.to(engineId.toString()).emit(

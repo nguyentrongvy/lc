@@ -99,7 +99,8 @@ module.exports = class BaseRepository {
 
 	getOneAndUpdate(options) {
 		const newOptions = Object.assign({
-			isLean: true
+			isLean: true,
+			populate: [],
 		}, options);
 
 		newOptions.where = Object.assign({}, {
@@ -110,7 +111,9 @@ module.exports = class BaseRepository {
 			new: true,
 		}, newOptions.options);
 
-		return this.model.findOneAndUpdate(newOptions.where, newOptions.data, newOptions.options).lean(newOptions.isLean);
+		return this.model.findOneAndUpdate(newOptions.where, newOptions.data, newOptions.options)
+			.populate(newOptions.populate)
+			.lean(newOptions.isLean);
 	}
 
 	count(options) {

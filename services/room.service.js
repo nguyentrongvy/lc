@@ -164,6 +164,10 @@ class RoomService {
 				agents: [],
 			},
 			fields: 'channel botUser',
+			populate: [{
+				path: 'lastMessage',
+				model: 'Message'
+			}]
 		};
 		const room = await roomRepository.getOneAndUpdate(options);
 		if (!room) {
@@ -175,6 +179,7 @@ class RoomService {
 		const userName = await usersService.getUser(agentID);
 		const action = Constants.ACTION.LEFT_ROOM;
 		const content = `${userName} has left this room.`;
+		const lastMessage = _.get(room, 'lastMessage', '');
 		await messageService.create({
 			engineId,
 			content,
@@ -185,7 +190,7 @@ class RoomService {
 		});
 		const botUserId = room.botUser._id.toString();
 		await messageService.unsetStopBot(botUserId, engineId);
-		sendLeftRoom({ engineId, roomID });
+		sendLeftRoom({ engineId, room, lastMessage });
 		return room;
 	}
 
@@ -199,6 +204,10 @@ class RoomService {
 				agents: [],
 			},
 			fields: 'channel botUser',
+			populate: [{
+				path: 'lastMessage',
+				model: 'Message'
+			}]
 		};
 		const room = await roomRepository.getOneAndUpdate(options);
 		if (!room) {
@@ -207,6 +216,7 @@ class RoomService {
 
 		const action = Constants.ACTION.LEFT_ROOM;
 		const content = `All assigned agents have left this room.`;
+		const lastMessage = _.get(room, 'lastMessage', '');
 		await messageService.create({
 			engineId,
 			content,
@@ -217,7 +227,7 @@ class RoomService {
 		const botUserId = room.botUser._id.toString();
 		await messageService.unsetStopBot(botUserId, engineId);
 		const isAfk = true;
-		sendLeftRoom({ engineId, roomID, isAfk });
+		sendLeftRoom({ engineId, room, lastMessage, isAfk });
 		return room;
 	}
 
