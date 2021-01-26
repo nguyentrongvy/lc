@@ -16,12 +16,13 @@ exports.addProcessJobs = async (roomId, engineId) => {
 
 };
 
-exports.replaceJob = async (jobId, roomId, engineId) => {
-    roomTimerProvider.getJob(jobId).then((job) => {
-        job.remove();
-    });
-
-    this.addProcessJobs(roomId, engineId);
+exports.removeJob = async (roomId) => {
+    const hadJobQueue = await getFromRedis(`LeftRoomJob-${roomId}`);
+    if (hadJobQueue) {
+        roomTimerProvider.getJob(hadJobQueue).then((job) => {
+            job.remove();
+        });
+    }
 }
 
 exports.handleLeftRoomJob = async (roomId, engineId) => {
@@ -30,6 +31,7 @@ exports.handleLeftRoomJob = async (roomId, engineId) => {
         this.addProcessJobs(roomId, engineId);
     } else {
         await delFromRedis(`LeftRoomJob-${roomId}`);
-        this.replaceJob(hadJobQueue, roomId, engineId);
+        this.removeJob(roomId);
+        this.addProcessJobs(roomId, engineId);
     }
 }

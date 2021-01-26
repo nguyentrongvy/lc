@@ -170,6 +170,8 @@ class RoomService {
 			throw new Error(Constants.ERROR.ROOM_NOT_FOUND);
 		}
 
+		await leftRoomJob.removeJob(roomID);
+
 		const userName = await usersService.getUser(agentID);
 		const action = Constants.ACTION.LEFT_ROOM;
 		const content = `${userName} has left this room.`;
