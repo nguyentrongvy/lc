@@ -2,13 +2,15 @@ const express = require('express');
 const cors = require('cors');
 const compression = require('compression');
 const bodyParser = require('body-parser');
-const morgan = require('morgan');
 const helmet = require('helmet');
 
 const apis = require('./apis');
 const errorHanlder = require('./helpers/error-handler');
 const logger = require('.//services/logger');
 const httpLoggerMiddleware = require('./services/logger/morgan.service');
+const initTracer = require('./helpers/tracing.helper').init;
+
+const tracingMiddleware = require('./middlewares/tracing.middleware');
 
 module.exports = (settings) => {
 	const corsHeaders = settings.cors;
@@ -26,6 +28,8 @@ module.exports = (settings) => {
 	if (process.env.ENV === 'dev' || process.env.ENV === 'test') {
 		app.use(httpLoggerMiddleware.dev);
 	} else {
+		initTracer(process.env.SERVICE_NAME || 'livechat');
+		app.use(tracingMiddleware);
 		app.use(httpLoggerMiddleware.error);
 		app.use(httpLoggerMiddleware.common);
 	}
