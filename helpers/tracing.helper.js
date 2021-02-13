@@ -6,8 +6,8 @@ function initTracer(serviceName) {
         serviceName,
         sampler: {
             type: 'const',
-            params: 1,
-        }
+            param: 1,
+        },
     };
 
     return initJaegerTracer(config);
