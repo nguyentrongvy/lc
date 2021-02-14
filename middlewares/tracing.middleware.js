@@ -14,7 +14,7 @@ module.exports = (req, res, next) => {
 
     const responseHeaders = {};
     tracer.inject(span, openTracing.FORMAT_HTTP_HEADERS, responseHeaders);
-    req.set(responseHeaders);
+    res.set(responseHeaders);
 
     Object.assign(req, { span });
     const finishSpan = () => {
