@@ -99,6 +99,10 @@ class RoomService {
 				],
 			},
 			fields: 'agents channel',
+			populate: [{
+				path: 'lastMessage',
+				model: 'Message',
+			}],
 		};
 		if (roomID) {
 			options.where._id = roomID;
