@@ -89,6 +89,10 @@ exports.initEvent = (socket) => {
 
                     return callback(null, room);
                 }
+                case Constants.EVENT_TYPE.READ_MESSAGE: {
+                    const { lastMessage, userId } = data.payload;
+                    return await messageService.agentSeenMessage(lastMessage, userId);
+                }
                 default: {
                     return callback();
                 }

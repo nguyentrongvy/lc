@@ -19,16 +19,18 @@ const {
 	sendClearTimer,
 	sendBotMessage,
 	sendMaintenance,
+	sendAgentSeenMessage,
 } = require('../services/socket-emitter.service');
 const dateTimeHelper = require('../helpers/date-time.helper');
 const scheduleService = require('./schedule.service');
 
 class MessageService {
-	create({ botUser, engineId, room, content, channel, action }) {
+	create({ botUser, engineId, room, content, channel, action, agent }) {
 		return messageRepository.create({
 			botUser: botUser,
 			engineId: engineId,
 			room,
+			agent,
 			content: content,
 			channel: channel,
 			action: (action ? action : Constants.ACTION.CHAT),
@@ -570,6 +572,27 @@ class MessageService {
 			masterBot,
 			dataEmit,
 		};
+	}
+
+	async agentSeenMessage(lastMessage, userId) {
+		if (!lastMessage
+			|| !lastMessage._id
+			|| (lastMessage.agentSeen && lastMessage.agentSeen.includes(userId))
+			|| !userId
+		) {
+			return;
+		}
+
+		const message = await messageRepository.getOneAndUpdate({
+			where: {
+				_id: lastMessage._id,
+			},
+			data: {
+				$addToSet: { agentSeen: userId },
+			},
+		});
+
+		sendAgentSeenMessage({ userId, message });
 	}
 }
 

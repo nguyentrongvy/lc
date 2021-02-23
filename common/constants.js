@@ -73,6 +73,8 @@ const constants = {
 		SEND_NOTIFICATION: 'send_notification',
 		JOIN_ROOM: 'join_room',
 		LEFT_ROOM: 'left_room',
+		SEEN_MESSAGE: 'seen_message',
+		READ_MESSAGE: 'read_message',
 	},
 	REDIS: {
 		PREFIX: {

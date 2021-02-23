@@ -112,6 +112,7 @@ class RoomService {
 
 		options.data = {
 			agents: [agentID],
+			$addToSet: { agentJoins: agentID },
 		}
 		const room = await roomRepository.getOneAndUpdate(options);
 		if (!room) {
@@ -241,7 +242,11 @@ class RoomService {
 				engineId,
 				_id: roomId,
 			},
-			fields: 'botUser channel note tags engineId unreadMessages agents',
+			fields: 'botUser channel note tags engineId unreadMessages agents agentJoins',
+			populate: {
+				path: 'lastMessage',
+				select: '_id agentSeen',
+			},
 		});
 		if (!room) {
 			throw new Error(Constants.ERROR.ROOM_NOT_FOUND);
@@ -367,10 +372,10 @@ function getRooms(condition, page, limit) {
 		page,
 		limit,
 		where: condition,
-		fields: 'botUser lastMessage channel unreadMessages agents',
+		fields: 'botUser lastMessage channel unreadMessages agents agentJoins',
 		populate: {
 			path: 'lastMessage',
-			select: 'content createdAt botUser agent',
+			select: 'content createdAt botUser agent agentSeen',
 		},
 		sort: {
 			updatedAt: -1,

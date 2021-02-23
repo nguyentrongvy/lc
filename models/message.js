@@ -38,6 +38,7 @@ const messageSchema = new mongoose.Schema({
 	deletedAt: {
 		type: Date,
 	},
+	agentSeen: [String],
 }, { timestamps: true });
 
 const Message = mongoose.model('Message', messageSchema);

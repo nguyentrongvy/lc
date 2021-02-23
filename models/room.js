@@ -58,6 +58,7 @@ const roomSchema = new mongoose.Schema({
 	pageId: {
 		type: String,
 	},
+	agentJoins: [String],
 }, { timestamps: true });
 
 const Room = mongoose.model('Room', roomSchema);

@@ -122,3 +122,16 @@ exports.sendMaintenance = (maintenanceInfo, engineId) => {
         dataEmit,
     );
 }
+
+exports.sendAgentSeenMessage = ({ userId, message }) => {
+    const dataEmit = {
+        type: Constants.EVENT_TYPE.SEEN_MESSAGE,
+        payload: {
+            message,
+        },
+    };
+    socketEmitter.to(userId.toString()).emit(
+        Constants.EVENT.CHAT,
+        dataEmit,
+    );
+};
