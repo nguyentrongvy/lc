@@ -397,7 +397,8 @@ async function getBotUserByUserId(roomID) {
 		headers: { authorization: process.env.SERVER_API_KEY }
 	});
 
-	const botUser = _.get(res, 'data.data', '');
+	let botUser = _.get(res, 'data.data', '');
+	botUser.username = botUser.name;
 
 	return botUser;
 }
