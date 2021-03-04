@@ -592,7 +592,7 @@ class MessageService {
 			},
 		});
 
-		sendAgentSeenMessage({ userId, message });
+		sendAgentSeenMessage({ message });
 	}
 }
 

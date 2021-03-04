@@ -123,14 +123,15 @@ exports.sendMaintenance = (maintenanceInfo, engineId) => {
     );
 }
 
-exports.sendAgentSeenMessage = ({ userId, message }) => {
+exports.sendAgentSeenMessage = ({ message }) => {
     const dataEmit = {
         type: Constants.EVENT_TYPE.SEEN_MESSAGE,
         payload: {
             message,
         },
     };
-    socketEmitter.to(userId.toString()).emit(
+    const engineId = message && message.engineId;
+    socketEmitter.to(engineId.toString()).emit(
         Constants.EVENT.CHAT,
         dataEmit,
     );
