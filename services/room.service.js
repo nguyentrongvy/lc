@@ -119,7 +119,7 @@ class RoomService {
 			throw new Error(Constants.ERROR.ROOM_NOT_FOUND);
 		}
 
-		await leftRoomJob.handleLeftRoomJob(roomID, engineId);
+		await leftRoomJob.handleLeftRoomJob(room._id, engineId);
 
 		const [
 			userName,
