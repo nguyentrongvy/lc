@@ -156,7 +156,7 @@ class BroadcastResponseService {
     ) {
       throw new Error(ERROR.DATA_ERROR);
     }
-    const url = `${process.env.NLP_SERVER}/v1/responses/names?names=${names}`;
+    const url = encodeURI(`${process.env.NLP_SERVER}/v1/responses/names?names=${names}`);
     const res = await axios.get(url, {
       headers: {
         authorization: process.env.SERVER_API_KEY,
