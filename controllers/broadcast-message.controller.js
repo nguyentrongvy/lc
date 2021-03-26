@@ -2,6 +2,7 @@ const broadcastMessageService = require('../services/broadcast-message.service')
 const { ResponseSuccess, ResponseError } = require('../helpers/response.helper');
 const { broadcastMessageRepository } = require('../repositories/index');
 const logger = require('../services/logger');
+const Constants = require('../common/constants');
 
 class BroadcastMessageController {
   async getById(req, res, next) {
@@ -24,6 +25,17 @@ class BroadcastMessageController {
       const orgId = req.org._id;
       const result = await broadcastMessageService.createBroadcastMessage(data, engineId, orgId);
       return ResponseSuccess('UPDATE_RESPONSE_SUCCESS', result, res);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async createBroadcastMessages(req, res, next) {
+    try {
+      const engineId = req.engine._id;
+      const data = req.body;
+      const result = await broadcastMessageService.createBroadcastMessageCustomer(data, engineId);
+      return ResponseSuccess(Constants.SUCCESS.BROADCAST_CUSTOMER_API, result, res);
     } catch (err) {
       next(err);
     }

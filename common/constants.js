@@ -35,6 +35,7 @@ const constants = {
 		GET_RESPONSE_SUCCESS: 'GET_RESPONSE_SUCCESS',
 		CREATE_RESPONSE_SUCCESS: 'CREATE_RESPONSE_SUCCESS',
 		RUN_TIMER_SUCCESS: 'RUN_TIMER_SUCCESS',
+		BROADCAST_CUSTOMER_API: 'CREATE_BROADCAST_MESSAGE_SUCCESS',
 	},
 	REGEX: {
 		OBJECT_ID: /^(?=[a-f\d]{24}$)(\d+[a-f]|[a-f]+\d)/i,
@@ -114,6 +115,11 @@ const constants = {
 		EXISTED_BROADCAST_MESSAGE: 1260,
 		SENT_BROADCAST_MESSAGE: 1261,
 		EXISTED_BROADCAST_RESPONSE: 1270,
+		PAGE_ID_NOT_FOUND: 1340,
+		CHANNEL_NOT_ACTIVE: 1341,
+		RESPONSE_NOT_FOUND: 1342,
+		USER_NOT_FOUND: 1343,
+		TAG_IS_REQUIRED: 1344,
 	},
 	GLOBAL_FIELDS: [
 		'name',
@@ -137,7 +143,17 @@ const constants = {
 	},
 	JOBS: {
 		IdleRoom: 'idle-room',
-	}
+	},
+	BROADCAST_MESSAGE_TYPE: {
+		MESSAGE_TAG: 'message_tag',
+		BROADCAST: 'broadcast',
+	},
+	FACEBOOK_MESSAGE_TAG: {
+		CONFIRMED_EVENT_UPDATE: 'confirmed_event_update',
+		POST_PURCHASE_UPDATE: 'post_purchase_update',
+		ACCOUNT_UPDATE: 'account_update',
+		HUMAN_AGENT: 'human_agent',
+	},
 };
 
 module.exports = Object.freeze(constants);

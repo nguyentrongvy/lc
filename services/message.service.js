@@ -254,6 +254,7 @@ class MessageService {
 		botUser,
 		isProactiveMessage,
 		actor,
+		messageType,
 	}) {
 		const userId = _.get(room, 'botUser._id', '').toString();
 		const engineId = _.get(room, 'engineId', '').toString();
@@ -307,6 +308,7 @@ class MessageService {
 			isStartedByBot: isProactiveMessage,
 			actor,
 			responses: validResponses,
+			messageType,
 		}, {
 			headers: {
 				authorization: process.env.SERVER_API_KEY,
@@ -367,6 +369,7 @@ class MessageService {
 		const responses = _.get(suggestions, 'responses', []);
 		const masterBot = _.get(suggestions, 'masterBot');
 		const pageId = _.get(suggestions, 'pageId');
+		const messageType = _.get(suggestions, 'messageType');
 
 		for (const response of responses) {
 			const content = _.get(response, 'channelResponses');
@@ -386,6 +389,7 @@ class MessageService {
 				responses: content,
 				botUser,
 				isProactiveMessage,
+				messageType,
 			});
 
 			if (masterBot && masterBot !== engineId) {

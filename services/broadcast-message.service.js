@@ -10,6 +10,7 @@ const botService = require('./bot.service');
 const _ = require('lodash');
 const { setExToRedis, delFromRedis } = require('./redis.service');
 const scheduleService = require('./schedule.service');
+const Constants = require('../common/constants');
 
 class BroadcastMessageService {
   async updateBroadcastMessage(id, data, engineId, orgId, isModified) {
@@ -52,6 +53,84 @@ class BroadcastMessageService {
     const message = await broadcastMessageRepository.create(data);
 
     await this.handleBroadcastMessage(message, engineId, orgId);
+  }
+
+  async createBroadcastMessageCustomer(message, engineId) {
+    if (!message || !engineId) throw new Error(ERROR.DATA_ERROR);
+
+    const message_type = _.get(message, 'message_type', Constants.BROADCAST_MESSAGE_TYPE.BROADCAST);
+    const tag = _.get(message, 'tag');
+    if (message_type != Constants.BROADCAST_MESSAGE_TYPE.BROADCAST
+      && !tag
+    ) {
+      throw new Error(ERROR_CODE.TAG_IS_REQUIRED);
+    }
+
+    const botUsersPromise = botUserService.getBotUserByEngineId(engineId, message.channel);
+    const responsesPromise = broadcastResponseService.getResponseFromVaByNames(engineId, message.responses);
+    const botPromise = botService.getBotByEngineId(engineId);
+    const [botUsers, responses, bot] = await Promise.all([botUsersPromise, responsesPromise, botPromise]);
+    let botChannel = _.get(bot, `channels.${message.channel}`);
+
+    if (message.channel == CHANNEL.FB) {
+      if (!message.pageId) {
+        throw new Error(ERROR_CODE.PAGE_ID_NOT_FOUND);
+      }
+      if (!botChannel.isActive) botChannel = _.get(bot, `channels.${CHANNEL.Messenger}`);
+    }
+
+    if (!botChannel || !botChannel.isActive) {
+      throw new Error(ERROR_CODE.CHANNEL_NOT_ACTIVE);
+    }
+
+    if (!responses || responses.length == 0) {
+      throw new Error(ERROR_CODE.RESPONSE_NOT_FOUND);
+    };
+
+    if (!botUsers || botUsers.length == 0) {
+      throw new Error(ERROR_CODE.USER_NOT_FOUND);
+    }
+
+    let sentUsers = [...botUsers];
+    if (message.channel == CHANNEL.FB) {
+      sentUsers = sentUsers.filter(u => {
+        const pageId = _.get(u, 'channel.pageId');
+        if (pageId != message.pageId) return false;
+        return true;
+      });
+    }
+
+    if (message.userId) {
+      sentUsers = sentUsers.filter(u => {
+        const userId = _.get(u, 'channel.userId');
+        if (userId != message.userId) return false;
+        return true;
+      });
+    }
+
+    if (message.tags && message.tags.length > 0) {
+      sentUsers = sentUsers.filter(u => {
+        if (!u.tags || u.tags.length == 0) return false;
+
+        for (const tag of u.tags) {
+          if (!tag._id) continue;
+          const t = message.tags.find(t => t == tag.content.toString());
+          if (t) return true;
+        }
+        return false;
+      });
+    }
+    if (!sentUsers || sentUsers.length == 0) {
+      throw new Error(ERROR_CODE.USER_NOT_FOUND);
+    };
+
+    const messageType = {
+      message_type,
+      tag,
+    };
+    const promise = sentUsers.map(u => sendMessage({ u, responses, engineId, messageType }));
+    await Promise.all(promise);
+    return;
   }
 
   async getById(id, engineId, orgId) {
@@ -148,7 +227,7 @@ class BroadcastMessageService {
         return;
       };
 
-      const promise = sentUsers.map(u => sendMessage(u, responses, engineId));
+      const promise = sentUsers.map(u => sendMessage({ u, responses, engineId }));
       await Promise.all(promise);
       const sentMessages = sentUsers.filter(u => u.isSent);
       message.sentMessages = sentMessages && sentMessages.length || 0;
@@ -206,7 +285,7 @@ class BroadcastMessageService {
 
 module.exports = new BroadcastMessageService();
 
-async function sendMessage(u, responses, engineId) {
+async function sendMessage({ u, responses, engineId, messageType }) {
   let sessionInfo;
   if (u.sessionId) {
     const parameterString = await getFromRedis(u.sessionId);
@@ -235,7 +314,8 @@ async function sendMessage(u, responses, engineId) {
         {
           channelResponses: replacedResponses,
         }
-      ]
+      ],
+      messageType,
     },
     roomId: room._id,
     engineId,

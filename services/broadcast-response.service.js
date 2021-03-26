@@ -1,3 +1,4 @@
+const axios = require('axios');
 const { broadcastResponseRepository } = require('../repositories');
 const { ERROR, ERROR_CODE, REDIS, CHANNEL, GLOBAL_FIELDS } = require('../common/constants');
 const _ = require('lodash');
@@ -146,6 +147,24 @@ class BroadcastResponseService {
     };
     let response = await broadcastResponseRepository.updateOne(options);
     return response;
+  }
+
+  async getResponseFromVaByNames(engineId, names) {
+    if (!engineId
+      || !names
+      || names.length == 0
+    ) {
+      throw new Error(ERROR.DATA_ERROR);
+    }
+    const url = `${process.env.NLP_SERVER}/v1/responses/names?names=${names}`;
+    const res = await axios.get(url, {
+      headers: {
+        authorization: process.env.SERVER_API_KEY,
+        engineId,
+      },
+    });
+
+    return res && res.data && res.data.data;
   }
 }
 
