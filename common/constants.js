@@ -53,6 +53,8 @@ const constants = {
 		Freshdesk: 'freshdesk',
 		Ivr: 'ivr',
 		VoiceGateway: 'voice_gateway',
+        Ios: 'ios',
+        Android: 'android',
 	},
 	ACTION: {
 		CHAT: 'chat',
