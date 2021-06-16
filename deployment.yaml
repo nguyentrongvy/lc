@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: livechat-dev
+  labels:
+    app: livechat-dev
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: livechat-dev
+  template:
+    metadata:
+      labels:
+        app: livechat-dev
+    spec:
+      containers:
+        - name: livechat-dev
+          image: 725359398979.dkr.ecr.ap-southeast-1.amazonaws.com/vnlp.server.livechat-dev:1
+          ports:
+            - containerPort: 80
+          envFrom:
+            - configMapRef:
+                name: livechat-dev-env
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "100m"
+            limits:
+              memory: "1024Mi"
+              cpu: "500m"
+      imagePullSecrets:
+        - name: regcred

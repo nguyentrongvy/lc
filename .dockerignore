@@ -1,0 +1,11 @@
+node_modules
+/temp
+.vscode
+.env
+.dockerignore
+.gitignore
+bitbucket-pipelines.yml
+config.properties
+deployment.yaml
+Dockerfile
+service.yaml

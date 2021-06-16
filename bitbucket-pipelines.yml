@@ -1,25 +1,27 @@
-image: node:10.15.3
+image: atlassian/default-image:2
 
 pipelines:
   branches:
-    dev:
+    staging:
       - step:
-          name: Web Server 1
-          caches:
-            - node
+          name: "Build and push"
+          image: atlassian/pipelines-awscli
+          services:
+            - docker
           script:
-            - ssh -p 2204 root@113.176.195.87<<EOF
-              /vnlp/bitbucket/dev/livechat.sh
+            - aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin 725359398979.dkr.ecr.ap-southeast-1.amazonaws.com
+            - IMAGE="725359398979.dkr.ecr.ap-southeast-1.amazonaws.com/vnlp.server.livechat-dev"
+            - VERSION="${BITBUCKET_BUILD_NUMBER}"
+            - docker build -t ${IMAGE}:${VERSION} .
+            - docker tag ${IMAGE}:${VERSION} ${IMAGE}:${VERSION}
+            - docker push ${IMAGE}:${VERSION}
+      - step:
+          name: "Deploy to staging"
+          deployment: development
+          script:
+            - ssh -p 2200 root@113.176.195.87<<EOF
+              /root/scripts/deploy-server.sh livechat-dev ${VERSION}
               exit
               exit
               EOF
-      - step:
-            name: Web Server 2
-            caches:
-              - node
-            script:
-              - ssh -p 2207 root@113.176.195.87<<EOF
-                /vnlp/bitbucket/dev/livechat.sh
-                exit
-                exit
-                EOF
+              EOF
