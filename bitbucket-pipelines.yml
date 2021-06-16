@@ -17,7 +17,7 @@ pipelines:
             - docker push ${IMAGE}:${VERSION}
       - step:
           name: "Deploy to dev"
-          deployment: development
+          deployment: Dev
           script:
             - ssh -p 2200 root@113.176.195.87<<EOF
               /root/scripts/deploy-server.sh livechat-dev ${VERSION}
