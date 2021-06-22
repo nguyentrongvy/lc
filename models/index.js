@@ -1,11 +1,14 @@
 const mongoose = require('mongoose');
 
-const { loadModulesInDir } = require('../helpers/load-modules');
-
 module.exports = {
 	mongoose,
 	connectDB: (dbSettings) => mongoose.connect(dbSettings.connection, dbSettings.options),
 	loadModels: () => {
-		loadModulesInDir('models');
+		require('./broadcast-message');
+		require('./broadcast-response');
+		require('./message');
+		require('./notification');
+		require('./room');
+		require('./tag');
 	},
 };

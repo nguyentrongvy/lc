@@ -1,5 +1,9 @@
-const { loadModulesInDir } = require('../helpers/load-modules');
-
 exports.load = (app) => {
-	loadModulesInDir('apis', app);
+	require('./broadcast-message.api');
+	require('./broadcast-response.api');
+	require('./message');
+	require('./notification');
+	require('./room');
+	require('./tag');
+	require('./timer.api');
 };

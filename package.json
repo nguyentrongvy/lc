@@ -1,6 +1,6 @@
 {
-  "name": "vnlp-live-chat",
-  "version": "0.0.1",
+  "name": "vnlp.server.livechat",
+  "version": "1.0.0",
   "description": "Init source nodejs",
   "main": "index.js",
   "scripts": {
@@ -35,7 +35,6 @@
     }
   },
   "dependencies": {
-    "@hapi/joi": "^15.0.1",
     "axios": "^0.19.2",
     "bcrypt": "^3.0.6",
     "body-parser": "^1.18.3",
@@ -73,5 +72,11 @@
   "keywords": [
     "live-chat"
   ],
-  "author": "DuyN"
+  "bin": "./bin/index.js",
+  "pkg": {
+    "targets": [
+      "node10-macos-x64"
+    ],
+    "outputPath": "dist"
+  }
 }
