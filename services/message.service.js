@@ -598,6 +598,52 @@ class MessageService {
 
 		sendAgentSeenMessage({ message });
 	}
+
+	formatMessageHistory(messages) {
+		messages = messages.filter(m => m.action == 'chat');
+		const formattedMessages = messages.map(m => {
+			let messageObject = {
+				_id: m._id,
+			};
+			if (m.botUser) messageObject.actor = Constants.ACTOR.User;
+			else messageObject.actor = Constants.ACTOR.Bot;
+			try {
+				const objectResponse = JSON.parse(m.content)[0];
+				messageObject = {
+					...messageObject,
+					type: objectResponse.responseType,
+				}
+				switch (objectResponse.responseType) {
+					case Constants.RESPONSE_TYPE.Button:
+						messageObject.text = objectResponse.text;
+						messageObject.buttons = objectResponse.buttons;
+						break;
+					case Constants.RESPONSE_TYPE.QuickReply:
+						messageObject.text = objectResponse.text;
+						messageObject.quickReplies = objectResponse.quickReplies;
+						break;
+					case Constants.RESPONSE_TYPE.Image:
+						messageObject.imageUrl = objectResponse.imageUrl;
+						break;
+					case Constants.RESPONSE_TYPE.Card:
+						messageObject.cards = objectResponse.cards;
+						break;
+					case Constants.RESPONSE_TYPE.Text:
+						messageObject.text = objectResponse.text;
+						break;
+				}
+				return messageObject;
+			} catch (e) {
+				return {
+					...messageObject,
+					type: 'text',
+					text: m.content,
+				};
+			}
+		});
+
+		return formattedMessages;
+	}
 }
 
 async function getRooms({ botUser, listBot, channel, orgId, pageId }) {

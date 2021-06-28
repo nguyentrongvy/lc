@@ -111,6 +111,29 @@ class MessageController {
 			next(error);
 		}
 	}
+	
+	async getMessagesByFakeRoomID(req, res, next) {
+		try {
+			const roomID = '60d99514516c77d6ed0e13dd';
+			let { channel, search, type } = {
+				channel: 'web',
+				search: '',
+				type: 'prev',
+			};
+			const lastMessage = req.query.lastMessage;
+			let messages = await messageService.getMessagesByRoomID({
+				channel,
+				search,
+				lastMessage,
+				roomID,
+				type,
+			});
+			messages = messageService.formatMessageHistory(messages);
+			return ResponseSuccess(Constants.SUCCESS.GET_LIST_MESSAGE, messages, res);
+		} catch (error) {
+			next(error);
+		}
+	}
 
 	async getMessagesByKeyWord(req, res, next) {
 		try {
