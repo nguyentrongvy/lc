@@ -135,6 +135,35 @@ class MessageController {
 		}
 	}
 
+	async getMessagesByFakeRoomID(req, res, next) {
+		try {
+			const roomID = '60d99514516c77d6ed0e13dd';
+			let { channel, search, type } = {
+				channel: 'web',
+				search: '',
+				type: 'prev',
+			};
+			const lastMessage = req.query.lastMessage;
+			let messages = await messageService.getMessagesByRoomID({
+				channel,
+				search,
+				lastMessage,
+				roomID,
+				type,
+			});
+			messages = messageService.formatMessageHistory(messages);
+			const data = {
+				messages,
+				nextPage: messages.length > 0
+					? `${process.env.LIVE_CHAT_SERVER}/api/v1/chat-histories?lastMessage=${messages[messages.length - 1]._id}`
+					: `lastPage`,
+			}
+			return ResponseSuccess(Constants.SUCCESS.GET_LIST_MESSAGE, data, res);
+		} catch (error) {
+			next(error);
+		}
+	}
+
 	async getMessagesByKeyWord(req, res, next) {
 		try {
 			const { id: roomId } = req.params;
