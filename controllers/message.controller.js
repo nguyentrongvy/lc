@@ -132,7 +132,7 @@ class MessageController {
 			const data = {
 				messages,
 				nextPage: messages.length > 0
-					? `${process.env.AUTH_SERVER}/api/v1/chat-histories?lastMessage=${messages[messages.length - 1]._id}`
+					? `${process.env.GLOBAL_AUTH_SERVER}/api/v1/chat-histories?lastMessage=${messages[messages.length - 1]._id}`
 					: null,
 			}
 			return ResponseSuccess(Constants.SUCCESS.GET_LIST_MESSAGE, data, res);
