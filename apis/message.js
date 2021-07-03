@@ -17,8 +17,10 @@ exports.load = (app) => {
 		'/api/v1/chat-histories',
 		[
 			authenMiddleware.verifyToken,
+			validate(messageValidation.lastMessage()),
+			validate(messageValidation.getChatHistoriesValidate()),
 		],
-		messageController.getMessagesByFakeRoomID,
+		messageController.getChatHistories,
 	);
 	app.get(
 		'/api/v1/rooms/:id/messages',

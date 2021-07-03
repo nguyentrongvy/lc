@@ -22,5 +22,11 @@ exports.sendMessage = () => ({
 exports.lastMessage = () => ({
 	query: {
 		lastMessage: Joi.string().regex(Constants.REGEX.OBJECT_ID),
-	}
+	},
+});
+
+exports.getChatHistoriesValidate = () => ({
+	headers: {
+		roomid: Joi.string().regex(Constants.REGEX.OBJECT_ID),
+	},
 });
