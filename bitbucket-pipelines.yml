@@ -5,16 +5,13 @@ pipelines:
     dev:
       - step:
           name: "Build and push"
-          image: atlassian/pipelines-awscli
-          services:
-            - docker
           script:
-            - aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin 725359398979.dkr.ecr.ap-southeast-1.amazonaws.com
-            - IMAGE="725359398979.dkr.ecr.ap-southeast-1.amazonaws.com/vnlp.server.livechat-dev"
-            - VERSION="${BITBUCKET_BUILD_NUMBER}"
-            - docker build -t ${IMAGE}:${VERSION} .
-            - docker tag ${IMAGE}:${VERSION} ${IMAGE}:${VERSION}
-            - docker push ${IMAGE}:${VERSION}
+            - ssh -p 2201 root@113.176.195.87<<EOF
+              /root/emandai/cmd/deploy-server.sh dev livechat ${BITBUCKET_BUILD_NUMBER}
+              exit
+              exit
+              EOF
+              EOF
       - step:
           name: "Deploy to dev"
           deployment: Dev
