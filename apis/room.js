@@ -1,6 +1,7 @@
 const validate = require('express-validation');
 
 const commonValidation = require('../validations/common.validation');
+const roomValidation = require('../validations/room.validation');
 const authMiddleware = require('../middlewares/authentication.middleware');
 const roomController = require('../controllers/room.controller');
 
@@ -107,6 +108,15 @@ exports.load = (app) => {
 		[
 			authMiddleware.verifyToken,
 		],
-		roomController.countUnassignedRooms
-	)
+		roomController.countUnassignedRooms,
+	);
+
+	app.post(
+		'/api/v1/rooms',
+		[
+			authMiddleware.verifyToken,
+			validate(roomValidation.roomValidation()),
+		],
+		roomController.createRoom,
+	);
 };

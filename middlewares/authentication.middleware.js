@@ -10,10 +10,6 @@ exports.verifyToken = async (req, res, next) => {
 			return next(new Error('AUTHENTICATION_FAILED'));
 		}
 
-		if (token === 'Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJib3RJZCI6IjVmZjUyMjlmMmUwMjc4NTZlYzU0YzYzOCIsInVzZXJJZCI6IjEyMzQ1IiwiYm90VXNlcklkIjoiNjBkOTQ0NzU3NWY1MzAxYjg0ZDFkYzg1Iiwicm9vbUlkIjoiNjBjMmNhZjgzYzBmN2YwMzQ3NTY3MGQ3IiwiY2hhbm5lbCI6InNkayIsImlhdCI6MTYyNDg3MDg4N30.aRw-OuQhNwc4xoBK3QP7TunhfG5RK5LtiPD--59ZDyMzJCNRnyZ9C0cZ4IVG4vkqvS9-qbM_9PGGoRCbS38YtbBRQg7c5xlhIkjXwG8GWPN4MtUMMu4sz9tjbze4UwenhTgYTm-RB-CZyqIpCHufs9Q35HqlRN8lsOuqdww-944') {
-			return next();
-		}
-
 		if (token === process.env.SERVER_API_KEY) {
 			req.engine = {
 				_id: req.headers.engineid,

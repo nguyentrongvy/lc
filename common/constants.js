@@ -55,6 +55,7 @@ const constants = {
 		VoiceGateway: 'voice_gateway',
         Ios: 'ios',
         Android: 'android',
+        Sdk: 'sdk',
 	},
 	ACTION: {
 		CHAT: 'chat',

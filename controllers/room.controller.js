@@ -125,6 +125,21 @@ class RoomController {
 		}
 	}
 
+	async createRoom(req, res, next) {
+		try {
+			const {
+				botUser,
+				engineId,
+				channel,
+				orgId,
+			} = req.body;
+			const data = await roomService.createRoom({ botUser, engineId, channel, orgId });
+			return ResponseSuccess(Constants.SUCCESS.GET_ROOM, data, res);
+		} catch (error) {
+			next(error);
+		}
+	}
+
 	async updateRoomById(req, res, next) {
 		try {
 			const roomId = req.params.id;

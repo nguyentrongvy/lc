@@ -363,11 +363,38 @@ class RoomService {
 			fields: '_id pageId',
 		});
 	}
+
+	async createRoom({ botUser, engineId, channel, orgId }) {
+		const condition = {
+			channel,
+			orgId,
+			engineId,
+			'botUser._id': botUser._id,
+		};
+		const existedRoom = await roomRepository.getOne({
+			where: condition,
+			fields: '_id agents channel botUser engineId',
+		});
+
+		if (existedRoom) return existedRoom;
+		const roomData = {
+			channel,
+			orgId,
+			engineId,
+			botUser: {
+				_id: botUser._id,
+				username: botUser.name,
+			},
+		};
+		const newRoom = await roomRepository.create(roomData);
+		return newRoom;
+	}
 }
 
 module.exports = new RoomService();
 
 function getRooms(condition, page, limit) {
+	condition.lastMessage = { $exists: true };
 	return roomRepository.getMany({
 		page,
 		limit,
