@@ -45,6 +45,13 @@ exports.sendBotMessage = (receiver, dataEmit) => {
     socketEmitter.to(receiver.toString()).emit(Constants.EVENT.CHAT, dataEmit);
 };
 
+exports.sendUserInfo = (receiver, dataEmit) => {
+    if (!receiver) {
+        return;
+    }
+    socketEmitter.to(receiver.toString()).emit(Constants.EVENT.DATA_PROCESSING, dataEmit);
+}
+
 exports.sendClearTimer = (roomId, engineId) => {
     const dataEmit = {
         type: Constants.EVENT_TYPE.CLEAR_TIMER,

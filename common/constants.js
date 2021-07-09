@@ -66,6 +66,7 @@ const constants = {
 		CHAT: 'chat',
 		NOTIFICATION: 'notification',
 		Maintenance: 'maintenance',
+		DATA_PROCESSING: 'DataProcessing',
 	},
 	EVENT_TYPE: {
 		SEND_MESSAGE: 'send_message',
@@ -79,6 +80,7 @@ const constants = {
 		LEFT_ROOM: 'left_room',
 		SEEN_MESSAGE: 'seen_message',
 		READ_MESSAGE: 'read_message',
+		SEND_USER_INFO: 'send_user_info',
 	},
 	REDIS: {
 		PREFIX: {

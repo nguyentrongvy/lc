@@ -20,6 +20,7 @@ const {
 	sendBotMessage,
 	sendMaintenance,
 	sendAgentSeenMessage,
+	sendUserInfo,
 } = require('../services/socket-emitter.service');
 const dateTimeHelper = require('../helpers/date-time.helper');
 const scheduleService = require('./schedule.service');
@@ -188,6 +189,7 @@ class MessageService {
 		allParameters,
 		nlpIntentsOriginal,
 		messageLogId,
+		triggers,
 	}) {
 		for (const { room } of dataChat) {
 			const roomId = room._id;
@@ -223,6 +225,10 @@ class MessageService {
 				dataSending.entities = entities;
 				dataSending.faqResponses = faqResponses;
 			}
+			if (!_.isEmpty(triggers)) {
+				await this.sendUserInfoToLiveChat({ triggers, engineId });
+			}
+
 			sendMessage(dataSending);
 
 			if (intents && intents.length > 0) {
@@ -365,7 +371,7 @@ class MessageService {
 		return scheduleService.deleteJob(key);
 	}
 
-	async sendMessageAuto({ suggestions, roomId, engineId, isProactiveMessage }) {
+	async sendMessageAuto({ suggestions, roomId, engineId, isProactiveMessage, triggers }) {
 		const responses = _.get(suggestions, 'responses', []);
 		const masterBot = _.get(suggestions, 'masterBot');
 		const pageId = _.get(suggestions, 'pageId');
@@ -383,6 +389,9 @@ class MessageService {
 				content,
 			});
 			const botUser = _.get(room, 'botUser._id');
+			if (!_.isEmpty(triggers)) {
+				await this.sendUserInfoToLiveChat({ triggers, engineId });
+			}
 			await this.sendToBot({
 				room,
 				pageId,
@@ -408,6 +417,19 @@ class MessageService {
 				});
 			}
 		}
+	}
+
+	async sendUserInfoToLiveChat({ triggers, engineId }) {
+		const userInfo = _.get(triggers, 'userInfo.parameters', {});
+
+		const dataEmit = {
+			type: Constants.EVENT_TYPE.SEND_USER_INFO,
+			payload: {
+				userInfo,
+			},
+		};
+
+		sendUserInfo(engineId, dataEmit);
 	}
 
 	async setTimeoutResponse(listBot, dataChat, botUserId) {
@@ -477,6 +499,7 @@ class MessageService {
 	}
 
 	async sendMessagesAuto({
+		triggers,
 		dataChat,
 		responses,
 		listBot,
@@ -490,6 +513,7 @@ class MessageService {
 			const engineId = room.engineId.toString();
 			const roomId = room._id.toString();
 			await this.sendMessageAuto({
+				triggers,
 				roomId,
 				engineId,
 				suggestions: {

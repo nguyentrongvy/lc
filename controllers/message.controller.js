@@ -20,6 +20,7 @@ class MessageController {
 				allParameters,
 				nlpIntentsOriginal,
 				messageLogId,
+				triggers,
 			} = req.body;
 
 			const orgId = req.org._id;
@@ -64,6 +65,7 @@ class MessageController {
 				allParameters,
 				nlpIntentsOriginal,
 				messageLogId,
+				triggers,
 				responses: botResponses,
 			});
 
@@ -77,6 +79,7 @@ class MessageController {
 				if (isBotOffline || isUnassignedRoom || isUnassignedMasterRoom) {
 					setImmediate(() => {
 						messageService.sendMessagesAuto({
+							triggers,
 							dataChat,
 							listBot,
 							masterBot,
