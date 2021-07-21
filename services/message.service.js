@@ -460,13 +460,22 @@ class MessageService {
 		return status[0] !== 'true';
 	}
 
-	async createIncomingMsg({ botUser, listBot, content, channel, orgId, pageId }) {
+	async createIncomingMsg({
+		botUser,
+		listBot,
+		content,
+		channel,
+		orgId,
+		pageId,
+		platform,
+	}) {
 		let dataRooms = await getRooms({
 			botUser,
 			listBot,
 			channel,
 			orgId,
 			pageId,
+			platform,
 		});
 
 		const botUserName = botUser.name || Constants.CHAT_CONSTANTS.DEFAULT_NAME;
@@ -670,7 +679,7 @@ class MessageService {
 	}
 }
 
-async function getRooms({ botUser, listBot, channel, orgId, pageId }) {
+async function getRooms({ botUser, listBot, channel, orgId, pageId, platform }) {
 	const condition = {
 		channel,
 		orgId,
@@ -704,6 +713,7 @@ async function getRooms({ botUser, listBot, channel, orgId, pageId }) {
 				_id: botUser._id,
 				username: botUser.name,
 			},
+			platform,
 		}));
 		newRooms = await roomRepository.create(dataRooms);
 	}

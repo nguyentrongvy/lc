@@ -31,6 +31,10 @@ const roomSchema = new mongoose.Schema({
 		enum: Object.values(Constants.CHANNEL),
 		required: true,
 	},
+	platform: {
+		type: String,
+		enum: Object.values(Constants.PLATFORM),
+	},
 	unreadMessages: {
 		type: Number,
 		min: 0,

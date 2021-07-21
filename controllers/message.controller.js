@@ -21,6 +21,7 @@ class MessageController {
 				nlpIntentsOriginal,
 				messageLogId,
 				triggers,
+				platform,
 			} = req.body;
 
 			const orgId = req.org._id;
@@ -53,6 +54,7 @@ class MessageController {
 				channel,
 				orgId,
 				pageId,
+				platform,
 			});
 
 			await messageService.emitMessages({

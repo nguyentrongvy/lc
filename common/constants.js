@@ -57,6 +57,11 @@ const constants = {
         Android: 'android',
         Sdk: 'sdk',
 	},
+	PLATFORM: {
+		WEB: 'web',
+		Ios: 'ios',
+		Android: 'android',
+	},
 	ACTION: {
 		CHAT: 'chat',
 		JOIN_ROOM: 'join_room',
