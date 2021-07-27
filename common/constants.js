@@ -164,6 +164,7 @@ const constants = {
 		ACCOUNT_UPDATE: 'account_update',
 		HUMAN_AGENT: 'human_agent',
 	},
+	TAG_LIMIT: 20,
 };
 
 module.exports = Object.freeze(constants);

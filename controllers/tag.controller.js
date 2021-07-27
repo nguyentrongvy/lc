@@ -12,6 +12,18 @@ class TagControlelr {
             next(error);
         }
     }
+
+    async createTags(req, res, next) {
+        try {
+            const engineId = req.engine._id;
+            const { tags } = req.body;
+            const result = await tagService.createTags(engineId, tags);
+
+            return ResponseSuccess('', result, res);
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 module.exports = new TagControlelr();

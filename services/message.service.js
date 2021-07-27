@@ -179,6 +179,7 @@ class MessageService {
 	}
 
 	async emitMessages({
+		botUser,
 		dataChat,
 		intents,
 		entities,
@@ -226,7 +227,7 @@ class MessageService {
 				dataSending.faqResponses = faqResponses;
 			}
 			if (!_.isEmpty(triggers)) {
-				await this.sendUserInfoToLiveChat({ triggers, engineId });
+				await this.sendUserInfoToLiveChat({ triggers, engineId, botUser });
 			}
 
 			sendMessage(dataSending);
@@ -371,7 +372,7 @@ class MessageService {
 		return scheduleService.deleteJob(key);
 	}
 
-	async sendMessageAuto({ suggestions, roomId, engineId, isProactiveMessage, triggers }) {
+	async sendMessageAuto({ suggestions, roomId, engineId, isProactiveMessage, triggers, botUser }) {
 		const responses = _.get(suggestions, 'responses', []);
 		const masterBot = _.get(suggestions, 'masterBot');
 		const pageId = _.get(suggestions, 'pageId');
@@ -388,15 +389,15 @@ class MessageService {
 				engineId,
 				content,
 			});
-			const botUser = _.get(room, 'botUser._id');
+			const botUserId = _.get(room, 'botUser._id');
 			if (!_.isEmpty(triggers)) {
-				await this.sendUserInfoToLiveChat({ triggers, engineId });
+				await this.sendUserInfoToLiveChat({ triggers, engineId, botUser });
 			}
 			await this.sendToBot({
 				room,
 				pageId,
 				responses: content,
-				botUser,
+				botUser: botUserId,
 				isProactiveMessage,
 				messageType,
 			});
@@ -405,7 +406,7 @@ class MessageService {
 				// TODO: remove suggestion in master
 				const masterRoom = await roomRepository.getOne({
 					where: {
-						'botUser._id': botUser,
+						'botUser._id': botUserId,
 						engineId: masterBot,
 					},
 					fields: '_id',
@@ -419,8 +420,10 @@ class MessageService {
 		}
 	}
 
-	async sendUserInfoToLiveChat({ triggers, engineId }) {
+	async sendUserInfoToLiveChat({ triggers, engineId, botUser }) {
+		const tags = _.get(botUser, 'tags', []);
 		const userInfo = _.get(triggers, 'userInfo.parameters', {});
+		userInfo['tags'] = tags;
 
 		const dataEmit = {
 			type: Constants.EVENT_TYPE.SEND_USER_INFO,
@@ -478,6 +481,8 @@ class MessageService {
 			platform,
 		});
 
+		await updateRooms(dataRooms, botUser);
+
 		const botUserName = botUser.name || Constants.CHAT_CONSTANTS.DEFAULT_NAME;
 		const validContent = convertContent(content);
 
@@ -508,6 +513,7 @@ class MessageService {
 	}
 
 	async sendMessagesAuto({
+		botUser,
 		triggers,
 		dataChat,
 		responses,
@@ -522,6 +528,7 @@ class MessageService {
 			const engineId = room.engineId.toString();
 			const roomId = room._id.toString();
 			await this.sendMessageAuto({
+				botUser,
 				triggers,
 				roomId,
 				engineId,
@@ -688,7 +695,7 @@ async function getRooms({ botUser, listBot, channel, orgId, pageId, platform }) 
 	};
 	let existedRooms = await roomRepository.getAll({
 		where: condition,
-		fields: '_id agents channel botUser engineId',
+		fields: '_id agents channel botUser engineId tags note',
 	});
 
 	const hasNewRoom = existedRooms.length < listBot.length;
@@ -907,6 +914,34 @@ async function getMasterBot(botId, org) {
 	});
 
 	return _.get(data, 'data.data');
+}
+
+async function updateRooms(rooms, botUser) {
+	const promises = [];
+	for (const room of rooms) {
+		const tags = [];
+		for (const tag of botUser.tags) {
+			const exist = room.tags.some(t => t.content === tag.content);
+			if (!exist) {
+				tags.push(tag);
+			}
+		}
+		if (tags.length === 0) continue;
+
+		promises.push(roomRepository.updateOne({
+			where: {
+				_id: room._id,
+			},
+			data: {
+				$push: { tags },
+				note: botUser.note || room.note,
+			},
+		}));
+	}
+
+	if (promises.length === 0) return;
+
+	return Promise.all(promises);
 }
 
 module.exports = new MessageService();

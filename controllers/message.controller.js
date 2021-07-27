@@ -58,6 +58,7 @@ class MessageController {
 			});
 
 			await messageService.emitMessages({
+				botUser,
 				intents,
 				entities,
 				dataChat,
@@ -81,6 +82,7 @@ class MessageController {
 				if (isBotOffline || isUnassignedRoom || isUnassignedMasterRoom) {
 					setImmediate(() => {
 						messageService.sendMessagesAuto({
+							botUser,
 							triggers,
 							dataChat,
 							listBot,
