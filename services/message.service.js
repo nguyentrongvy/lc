@@ -753,6 +753,9 @@ function convertContent(content) {
 	let message = content;
 	try {
 		const messageObj = JSON.parse(content);
+		if (Array.isArray(messageObj)) {
+			return content;
+		}
 		if (typeof messageObj === 'object') {
 			return messageObj.title || '';
 		}
