@@ -923,6 +923,7 @@ async function updateRooms(rooms, botUser) {
 	const promises = [];
 	for (const room of rooms) {
 		const tags = [];
+		if (!botUser.tags) continue;
 		for (const tag of botUser.tags) {
 			const exist = room.tags.some(t => t.content === tag.content);
 			if (!exist) {
