@@ -74,6 +74,13 @@ const publishStopBot = (botId, botUserId, status) => {
     });
 };
 
+const getDataFromRedis = async (key) => {
+    if (!key) return;
+    const data = await getFromRedis(key);
+    if (!data) return;
+    return JSON.parse(data);
+}
+
 module.exports = {
     client,
     getFromRedis,
@@ -87,4 +94,5 @@ module.exports = {
     getMultiKey,
     notifyExpiredKey,
     publishStopBot,
+    getDataFromRedis,
 };

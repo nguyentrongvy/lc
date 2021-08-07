@@ -95,6 +95,7 @@ const constants = {
 			DATA_BOT_USER: 'dataBotUser_',
 			BROADCAST_MESSAGE: 'broadcastMessage_',
 			LiveChatMaintenance: 'liveChatMaintenance',
+			ROOM_COUNTDOWN: 'roomCountdown',
 		},
 		ROOM: {
 			EXPIRE_TIME: 15 * 1000, // ms

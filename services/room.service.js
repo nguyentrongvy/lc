@@ -12,6 +12,7 @@ const {
 	getTtlRedis,
 	getMultiKey,
 	getFromRedis,
+	getDataFromRedis,
 } = require('./redis.service');
 const logger = require('../services/logger');
 const leftRoomJob = require('../jobs/room/left-room-job');
@@ -150,6 +151,8 @@ class RoomService {
 
 		room.timeLeftInIdleRoom = await getTtlRedis([`LeftRoomJob-${roomID}`]);
 
+		const roomCountdown = _.toNumber(await getDataFromRedis(`${Constants.REDIS.PREFIX.ROOM_COUNTDOWN}:${engineId}`)) || -1;
+		room.roomCountdown = roomCountdown;
 		sendJoinRoom(engineId, {
 			...room,
 			suggestions,

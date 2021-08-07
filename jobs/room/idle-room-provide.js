@@ -1,11 +1,17 @@
+const _ = require('lodash');
 const roomTimerQueue = require('./idle-room');
 const Constants = require('../../common/constants');
+const {
+    getDataFromRedis,
+} = require('../../services/redis.service');
 
-exports.addJob = (data) => {
+exports.addJob = async (data) => {
+    const expiredTime = _.toNumber(await getDataFromRedis(`${Constants.REDIS.PREFIX.ROOM_COUNTDOWN}:${data.engineId}`)) || -1;
+    if (expiredTime == -1) return;
     return roomTimerQueue.add(Constants.JOBS.IdleRoom, data, {
         backOff: 5,
         removeOnComplete: true,
-        delay: 3 * 60 * 1000,
+        delay: expiredTime * 1000,
     });
 };
 
