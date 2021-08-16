@@ -66,13 +66,30 @@ class BroadcastMessageService {
       throw new Error(ERROR_CODE.TAG_IS_REQUIRED);
     }
 
-    const botUsersPromise = botUserService.getBotUserByEngineId(engineId, message.channel);
+    const botUsersPromise = botUserService.getBotUserByEngineId(engineId, message.channel, message.lastActiveDate, message.gender);
     const responsesPromise = broadcastResponseService.getResponseFromVaByNames(engineId, message.responses);
     const botPromise = botService.getBotByEngineId(engineId);
     const [botUsers, responses, bot] = await Promise.all([botUsersPromise, responsesPromise, botPromise]);
     let botChannel = _.get(bot, `channels.${message.channel}`);
 
-    if (message.channel == CHANNEL.FB) {
+    if (message.content) {
+      if (Array.isArray(message.content)) {
+        for (const text of message.content) {
+          responses.unshift({
+            text,
+            responseType: 'text',
+          });
+        }
+      }
+      if (typeof message.content === 'string') {
+        responses.unshift({
+          text: message.content,
+          responseType: 'text',
+        });
+      }
+    }
+
+    if (message.channel === CHANNEL.FB) {
       if (!message.pageId) {
         throw new Error(ERROR_CODE.PAGE_ID_NOT_FOUND);
       }
@@ -92,7 +109,10 @@ class BroadcastMessageService {
     }
 
     let sentUsers = [...botUsers];
-    if (message.channel == CHANNEL.FB) {
+    if (
+      message.channel == CHANNEL.FB
+      || message.channel == CHANNEL.ZALO
+    ) {
       sentUsers = sentUsers.filter(u => {
         const pageId = _.get(u, 'channel.pageId');
         if (pageId != message.pageId) return false;

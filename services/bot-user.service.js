@@ -1,10 +1,18 @@
 const axios = require('axios');
 
 class BotUserService {
-  async getBotUserByEngineId(engineId, channel) {
+  async getBotUserByEngineId(engineId, channel, lastActiveDate, gender) {
     let url = `${process.env.NLP_SERVER}/v1/bot-users/bot`;
     if (channel) {
       url += `?channel=${channel}`;
+
+      if (lastActiveDate) {
+        url += `&lastActiveDate=${lastActiveDate}`;
+      }
+
+      if (gender) {
+        url += `&gender=${gender}`;
+      }
     }
     const rs = await axios.get(url, {
       headers: {
