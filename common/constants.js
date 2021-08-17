@@ -53,9 +53,9 @@ const constants = {
 		Freshdesk: 'freshdesk',
 		Ivr: 'ivr',
 		VoiceGateway: 'voice_gateway',
-        Ios: 'ios',
-        Android: 'android',
-        Sdk: 'sdk',
+		Ios: 'ios',
+		Android: 'android',
+		Sdk: 'sdk',
 	},
 	PLATFORM: {
 		WEB: 'web',
@@ -166,6 +166,13 @@ const constants = {
 		HUMAN_AGENT: 'human_agent',
 	},
 	TAG_LIMIT: 20,
+	TokenType: {
+		User: "user",
+		App: "app",
+		Bot: 'bot',
+		BotUser: 'bot-user',
+		Org: 'org',
+	},
 };
 
 module.exports = Object.freeze(constants);

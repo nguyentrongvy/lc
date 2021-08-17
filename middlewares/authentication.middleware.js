@@ -34,9 +34,9 @@ exports.verifyToken = async (req, res, next) => {
 			return next(new Error('INVALID_TOKEN'));
 		}
 		req.accessToken = accessToken;
-		req.engine = await getNlpEngineById(dataVerified && dataVerified.engine && dataVerified.engine._id);
+		req.engine = await getNlpEngineById(dataVerified && dataVerified.engineId);
 		req.user = {
-			_id: dataVerified.user._id,
+			_id: dataVerified.userId,
 		};
 		return next();
 	} catch (error) {
