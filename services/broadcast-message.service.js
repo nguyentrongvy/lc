@@ -57,6 +57,7 @@ class BroadcastMessageService {
 
   async createBroadcastMessageCustomer(message, engineId) {
     if (!message || !engineId) throw new Error(ERROR.DATA_ERROR);
+    if (!message.responses && !message.content) throw new Error(ERROR.DATA_ERROR);
 
     const message_type = _.get(message, 'message_type', Constants.BROADCAST_MESSAGE_TYPE.BROADCAST);
     const tag = _.get(message, 'tag');
