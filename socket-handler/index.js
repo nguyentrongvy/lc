@@ -1,36 +1,36 @@
 const _ = require('lodash');
 const axios = require('axios');
 const { initialize } = require('./initialize-socket');
-const jwtHelper = require('../helpers/jwt.helper');
-const { ERROR, TokenType } = require('../common/constants');
+const { ERROR, AppName } = require('../common/constants');
 const { verifyBotId } = require('../middlewares/authentication.middleware');
 
 async function authenticationUser(socket, next) {
 	try {
 		const { token, botId } = socket.handshake.query;
 		if (!token) throw new Error(ERROR.INVALID_TOKEN);
-		const data = jwtHelper.verifyToken(token);
-
-		if (data.type != TokenType.User) throw new Error(ERROR.INVALID_TOKEN);
 
 		const res = await axios({
-			url: `${process.env.AUTH_SERVER}/users/${data.userId}`,
-			method: 'GET',
+			url: `${process.env.AUTH_SERVER}/auth/token/verify`,
+			method: 'POST',
 			headers: {
 				authorization: process.env.SERVER_API_KEY,
 			},
+			data: {
+				token: `Bearer ${token}`,
+				appName: AppName.LiveChat,
+			},
 		});
 
-		const user = res && res.data && res.data.data;
+		const data = res && res.data && res.data.data;
+		if (!data) throw new Error(ERROR.INVALID_TOKEN);
 
-		const org = _.get(user, 'org._id');
-		const isVerified = await verifyBotId(org, botId);
+		const isVerified = await verifyBotId(_.get(data, 'org._id'), botId);
 		if (!isVerified) {
 			throw new Error('Bot is not belong to organization');
 		}
 
-		socket.user = user;
-		socket.org = user && user.org;
+		socket.user = data.user;
+		socket.org = data.org;
 		socket.engine = {
 			_id: botId,
 		};

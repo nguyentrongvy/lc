@@ -166,12 +166,13 @@ const constants = {
 		HUMAN_AGENT: 'human_agent',
 	},
 	TAG_LIMIT: 20,
-	TokenType: {
-		User: "user",
-		App: "app",
-		Bot: 'bot',
-		BotUser: 'bot-user',
-		Org: 'org',
+	AppName: {
+		VirtualAgent: 'Virtual Agent',
+		VirtualQC: 'Virtual QC',
+		Labelbox: 'Labelbox',
+		LiveChat: 'Livechat',
+		Admin: 'Admin',
+		UserChannels: 'User Channels',
 	},
 };
 
