@@ -1,47 +1,34 @@
-const axios = require('axios');
 const _ = require('lodash');
-
-const jwtHelper = require('../helpers/jwt.helper');
+const axios = require('axios');
+const { APP_NAME, COOKIE_NAME } = require('../common/constants');
 
 exports.verifyToken = async (req, res, next) => {
-	try {
-		const token = req.body.token || req.params.token || req.headers.authorization;
-		if (!token) {
-			return next(new Error('AUTHENTICATION_FAILED'));
-		}
+	const token = getTokenFromCookie(req) || req.headers.authorization;
+	if (!token) return next(new Error('INVALID_TOKEN'));
 
-		if (token === process.env.SERVER_API_KEY) {
-			req.engine = {
-				_id: req.headers.engineid,
-				isTwoChannels: req.headers.istwochannels === 'true',
-				isMultiIntents: req.headers.ismultiintents === 'true',
-			};
-			req.user = {
-				_id: req.headers.userid,
-			};
-			req.org = {
-				_id: req.headers.orgid,
-			};
-			return next();
-		}
+	req.appName = req.headers['app-name'];
+	req.userAgent = req.headers['user-agent'];
 
-		const [prefixToken, accessToken] = token.split(' ');
-		if (prefixToken !== 'Bearer') {
-			return next(new Error('TOKEN_INVALID_FORMAT'));
-		}
-		const dataVerified = jwtHelper.verifyToken(accessToken);
-		if (dataVerified.resetPassword) {
-			return next(new Error('INVALID_TOKEN'));
-		}
-		req.accessToken = accessToken;
-		req.engine = await getNlpEngineById(dataVerified && dataVerified.engineId);
-		req.user = {
-			_id: dataVerified.userId,
-		};
+	if (token == process.env.SERVER_API_KEY) {
+		handleServerApiKey(req);
 		return next();
-	} catch (error) {
-		next(error);
 	}
+
+	if (!token.startsWith('Bearer')) return next(new Error('INVALID_TOKEN'));
+
+	req.accessToken = token.substr(7, token.length - 7);
+	const data = await verifyToken(req.accessToken, req.userAgent, req.appName);
+	if (!data) return next(new Error('INVALID_TOKEN'));
+
+	req.engine = data.engine;
+	req.user = data.user;
+	req.org = data.org;
+
+	if (!req.engine || !req.engine._id) {
+		req.engine = { _id: req.headers.engineid };
+	}
+
+	return next();
 };
 
 exports.verifyBotId = async (org, botId) => {
@@ -59,11 +46,57 @@ exports.verifyBotId = async (org, botId) => {
 	return isVerified;
 };
 
-async function getNlpEngineById(engineId) {
-	if (!engineId) return;
-	const url = `${process.env.AUTH_SERVER}/nlp-engines/${engineId}`;
-	const res = await axios.get(url, {
-		headers: { authorization: process.env.SERVER_API_KEY }
-	});
-	return res && res.data && res.data.success && res.data.data;
+async function verifyToken(token, userAgent, appName) {
+	try {
+		if (!token) return;
+
+		const res = await axios.post(`${process.env.AUTH_SERVER}/auth/token/verify`, { token }, {
+			headers: {
+				authorization: process.env.SERVER_API_KEY,
+				'user-agent': userAgent,
+				'app-name': appName,
+			}
+		});
+		return res && res.data && res.data.data;
+	} catch (err) {
+		logger.error(err);
+	}
+}
+
+function getTokenFromCookie(req) {
+	const appName = req.headers['app-name'];
+	if (!appName) return;
+
+	const cookieName = getCookieNameByAppName(appName);
+	if (!cookieName) return;
+
+	const token = req.cookies[cookieName];
+	if (!token) return;
+
+	return `Bearer ${token}`;
+}
+
+function getCookieNameByAppName(appName) {
+	switch (appName) {
+		case APP_NAME.Admin: return COOKIE_NAME.Admin;
+		case APP_NAME.VirtualAgent: return COOKIE_NAME.VirtualAgent;
+		case APP_NAME.VirtualQC: return COOKIE_NAME.VirtualQC;
+		case APP_NAME.LiveChat: return COOKIE_NAME.LiveChat;
+		case APP_NAME.Labelbox: return COOKIE_NAME.Labelbox;
+	}
+}
+
+async function handleServerApiKey(req) {
+	req.engine = {
+		_id: req.headers.engineid,
+		isTwoChannels: req.headers.istwochannels === 'true',
+		isMultiIntents: req.headers.ismultiintents === 'true',
+	};
+	req.user = {
+		_id: req.headers.userid,
+		isSystemAdmin: req.headers.issystemadmin === 'true',
+	};
+	req.org = {
+		_id: req.headers.orgid,
+	};
 }

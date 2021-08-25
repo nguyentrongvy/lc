@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const compression = require('compression');
 const bodyParser = require('body-parser');
+const cookieParser = require('cookie-parser');
 const helmet = require('helmet');
 
 const apis = require('./apis');
@@ -12,18 +13,16 @@ const initTracer = require('./helpers/tracing.helper').init;
 
 const tracingMiddleware = require('./middlewares/tracing.middleware');
 
-module.exports = (settings) => {
-	const corsHeaders = settings.cors;
-
+module.exports = () => {
 	const app = express();
 
 	app.use(helmet());
 	app.use(compression());
-	app.use(cors(corsHeaders));
-	app.options('*', cors(corsHeaders));
+	app.use(cors({ origin: getCorsOrigins(), credentials: true }));
 
 	app.use(bodyParser.urlencoded({ extended: false }));
 	app.use(bodyParser.json({ type: 'application/json' }));
+	app.use(cookieParser());
 
 	if (process.env.ENV === 'dev' || process.env.ENV === 'test') {
 		app.use(httpLoggerMiddleware.dev);
@@ -47,3 +46,10 @@ module.exports = (settings) => {
 
 	return app;
 };
+
+function getCorsOrigins() {
+	const origins = process.env.CORS_ORIGINS;
+	if (!origins) return '*';
+
+	return origins.split(',').map(origin => origin.trim());
+}

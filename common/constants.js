@@ -11,6 +11,7 @@ const constants = {
 		ROOM_NOT_FOUND: 'NOT_EXIST_ROOM',
 		INVALID_TOKEN: 'INVALID_TOKEN',
 		DATA_ERROR: 'Data_error',
+		BOT_ID_IS_REQUIRED: 'botId is required',
 	},
 	SUCCESS: {
 		GET_LIST_USERS: 'Get list users successfully.',
@@ -166,13 +167,20 @@ const constants = {
 		HUMAN_AGENT: 'human_agent',
 	},
 	TAG_LIMIT: 20,
-	AppName: {
+	APP_NAME: {
 		VirtualAgent: 'Virtual Agent',
 		VirtualQC: 'Virtual QC',
 		Labelbox: 'Labelbox',
 		LiveChat: 'Livechat',
 		Admin: 'Admin',
 		UserChannels: 'User Channels',
+	},
+	COOKIE_NAME: {
+		VirtualAgent: '_va_t',
+		VirtualQC: '_vq_t',
+		Labelbox: '_lb_t',
+		LiveChat: '_lc_t',
+		Admin: '_am_t',
 	},
 };
 
