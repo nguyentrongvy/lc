@@ -22,6 +22,7 @@ class MessageController {
 				messageLogId,
 				triggers,
 				platform,
+				isInactivePeriod,
 			} = req.body;
 
 			const orgId = req.org._id;
@@ -69,6 +70,7 @@ class MessageController {
 				nlpIntentsOriginal,
 				messageLogId,
 				triggers,
+				isInactivePeriod,
 				responses: botResponses,
 			});
 

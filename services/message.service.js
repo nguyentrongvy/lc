@@ -191,6 +191,7 @@ class MessageService {
 		nlpIntentsOriginal,
 		messageLogId,
 		triggers,
+		isInactivePeriod,
 	}) {
 		for (const { room } of dataChat) {
 			const roomId = room._id;
@@ -198,7 +199,7 @@ class MessageService {
 			const engineId = room.engineId.toString();
 			const isStopped = room.isStopped;
 
-			if (!isStopped) {
+			if (!isStopped && !isInactivePeriod) {
 				const suggestions = await this.getSuggestionRedis(roomId, engineId);
 				if (
 					typeof suggestions === 'object'
