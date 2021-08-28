@@ -10,7 +10,8 @@ async function authenticationUser(socket, next) {
 		const { botId } = socket.handshake.query;
 		if (!botId) throw new Error(ERROR.BOT_ID_IS_REQUIRED);
 
-		const token = getTokenFromCookie(socket);
+		// TODO: Hotfix for Soby. Need to update in the future.
+		const token = getTokenFromCookie(socket) || _.get(socket, 'handshake.query.token');
 		if (!token) throw new Error(ERROR.INVALID_TOKEN);
 
 		const userAgent = _.get(socket, 'request.headers["user-agent"]');
