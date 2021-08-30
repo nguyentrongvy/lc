@@ -17,7 +17,7 @@ exports.verifyToken = async (req, res, next) => {
 	if (!token.startsWith('Bearer')) return next(new Error('INVALID_TOKEN'));
 
 	req.accessToken = token.substr(7, token.length - 7);
-	const data = await verifyToken(req.accessToken, req.userAgent, req.appName, req.headers.origin);
+	const data = await verifyToken(req.accessToken, req.userAgent, req.appName, req.headers.origin, req.ip);
 	if (!data) return next(new Error('INVALID_TOKEN'));
 
 	req.engine = data.engine;
@@ -46,13 +46,14 @@ exports.verifyBotId = async (org, botId) => {
 	return isVerified;
 };
 
-async function verifyToken(token, userAgent, appName, origin) {
+async function verifyToken(token, userAgent, appName, origin, ip) {
 	try {
 		if (!token) return;
 
 		const res = await axios.post(`${process.env.AUTH_SERVER}/auth/token/verify`, { token }, {
 			headers: {
 				origin,
+				ip,
 				authorization: process.env.SERVER_API_KEY,
 				'user-agent': userAgent,
 				'app-name': appName,

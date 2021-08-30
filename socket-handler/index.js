@@ -17,12 +17,14 @@ async function authenticationUser(socket, next) {
 		const userAgent = _.get(socket, 'request.headers["user-agent"]');
 		const appName = _.get(socket, 'handshake.query.appName');
 		const origin = _.get(socket, 'request.headers.origin');
-		
+		const ip = _.get(socket, 'handshake.address');
+
 		const res = await axios({
 			url: `${process.env.AUTH_SERVER}/auth/token/verify`,
 			method: 'POST',
 			headers: {
 				origin,
+				ip,
 				authorization: process.env.SERVER_API_KEY,
 				'user-agent': userAgent,
 				'app-name': appName,
