@@ -3,7 +3,7 @@ const axios = require('axios');
 const { APP_NAME, COOKIE_NAME } = require('../common/constants');
 
 exports.verifyToken = async (req, res, next) => {
-	const token = getTokenFromCookie(req) || req.headers.authorization;
+	const token = req.headers.authorization || getTokenFromCookie(req);
 	if (!token) return next(new Error('INVALID_TOKEN'));
 
 	req.appName = req.headers['app-name'];
@@ -17,7 +17,7 @@ exports.verifyToken = async (req, res, next) => {
 	if (!token.startsWith('Bearer')) return next(new Error('INVALID_TOKEN'));
 
 	req.accessToken = token.substr(7, token.length - 7);
-	const data = await verifyToken(req.accessToken, req.userAgent, req.appName);
+	const data = await verifyToken(req.accessToken, req.userAgent, req.appName, req.headers.origin);
 	if (!data) return next(new Error('INVALID_TOKEN'));
 
 	req.engine = data.engine;
@@ -46,12 +46,13 @@ exports.verifyBotId = async (org, botId) => {
 	return isVerified;
 };
 
-async function verifyToken(token, userAgent, appName) {
+async function verifyToken(token, userAgent, appName, origin) {
 	try {
 		if (!token) return;
 
 		const res = await axios.post(`${process.env.AUTH_SERVER}/auth/token/verify`, { token }, {
 			headers: {
+				origin,
 				authorization: process.env.SERVER_API_KEY,
 				'user-agent': userAgent,
 				'app-name': appName,
