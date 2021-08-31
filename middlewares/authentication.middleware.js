@@ -1,9 +1,9 @@
 const _ = require('lodash');
 const axios = require('axios');
-const { APP_NAME, COOKIE_NAME } = require('../common/constants');
+const tokenHelper = require('../helpers/token.helper');
 
 exports.verifyToken = async (req, res, next) => {
-	const token = req.headers.authorization || getTokenFromCookie(req);
+	const token = tokenHelper.getTokenFromRequest(req);
 	if (!token) return next(new Error('INVALID_TOKEN'));
 
 	req.appName = req.headers['app-name'];
@@ -17,7 +17,7 @@ exports.verifyToken = async (req, res, next) => {
 	if (!token.startsWith('Bearer')) return next(new Error('INVALID_TOKEN'));
 
 	req.accessToken = token.substr(7, token.length - 7);
-	const data = await verifyToken(req.accessToken, req.userAgent, req.appName, req.headers.origin, req.ip);
+	const data = await tokenHelper.verifyToken(req.accessToken, req.userAgent, req.appName, req.headers.origin);
 	if (!data) return next(new Error('INVALID_TOKEN'));
 
 	req.engine = data.engine;
@@ -45,48 +45,6 @@ exports.verifyBotId = async (org, botId) => {
 	const isVerified = _.get(res, 'data.data.isVerified', false);
 	return isVerified;
 };
-
-async function verifyToken(token, userAgent, appName, origin, ip) {
-	try {
-		if (!token) return;
-
-		const res = await axios.post(`${process.env.AUTH_SERVER}/auth/token/verify`, { token }, {
-			headers: {
-				origin,
-				ip,
-				authorization: process.env.SERVER_API_KEY,
-				'user-agent': userAgent,
-				'app-name': appName,
-			}
-		});
-		return res && res.data && res.data.data;
-	} catch (err) {
-		logger.error(err);
-	}
-}
-
-function getTokenFromCookie(req) {
-	const appName = req.headers['app-name'];
-	if (!appName) return;
-
-	const cookieName = getCookieNameByAppName(appName);
-	if (!cookieName) return;
-
-	const token = req.cookies[cookieName];
-	if (!token) return;
-
-	return `Bearer ${token}`;
-}
-
-function getCookieNameByAppName(appName) {
-	switch (appName) {
-		case APP_NAME.Admin: return COOKIE_NAME.Admin;
-		case APP_NAME.VirtualAgent: return COOKIE_NAME.VirtualAgent;
-		case APP_NAME.VirtualQC: return COOKIE_NAME.VirtualQC;
-		case APP_NAME.LiveChat: return COOKIE_NAME.LiveChat;
-		case APP_NAME.Labelbox: return COOKIE_NAME.Labelbox;
-	}
-}
 
 async function handleServerApiKey(req) {
 	req.engine = {

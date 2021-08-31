@@ -176,11 +176,18 @@ const constants = {
 		UserChannels: 'User Channels',
 	},
 	COOKIE_NAME: {
-		VirtualAgent: '_va_t',
-		VirtualQC: '_vq_t',
-		Labelbox: '_lb_t',
-		LiveChat: '_lc_t',
-		Admin: '_am_t',
+		VirtualAgent: 'va',
+		VirtualQC: 'vqc',
+		Labelbox: 'lb',
+		LiveChat: 'lc',
+		Admin: 'am',
+	},
+	ENV: {
+		Local: 'local',
+		Dev: 'dev',
+		Test: 'test',
+		Stag: 'staging',
+		Prod: 'prod',
 	},
 };
 

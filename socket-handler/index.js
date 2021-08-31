@@ -1,40 +1,22 @@
 const _ = require('lodash');
-const axios = require('axios');
-const cookie = require('cookie');
 const { initialize } = require('./initialize-socket');
-const { ERROR, APP_NAME, COOKIE_NAME } = require('../common/constants');
+const { ERROR } = require('../common/constants');
 const { verifyBotId } = require('../middlewares/authentication.middleware');
+const tokenHelper = require('../helpers/token.helper');
 
 async function authenticationUser(socket, next) {
 	try {
 		const { botId } = socket.handshake.query;
 		if (!botId) throw new Error(ERROR.BOT_ID_IS_REQUIRED);
 
-		// TODO: Hotfix for Soby. Need to update in the future.
-		const token = getTokenFromCookie(socket) || _.get(socket, 'handshake.query.token');
+		const token = tokenHelper.getTokenFromSocket(socket);
 		if (!token) throw new Error(ERROR.INVALID_TOKEN);
 
 		const userAgent = _.get(socket, 'request.headers["user-agent"]');
 		const appName = _.get(socket, 'handshake.query.appName');
 		const origin = _.get(socket, 'request.headers.origin');
-		const ip = _.get(socket, 'handshake.address');
 
-		const res = await axios({
-			url: `${process.env.AUTH_SERVER}/auth/token/verify`,
-			method: 'POST',
-			headers: {
-				origin,
-				ip,
-				authorization: process.env.SERVER_API_KEY,
-				'user-agent': userAgent,
-				'app-name': appName,
-			},
-			data: {
-				token,
-			},
-		});
-
-		const data = res && res.data && res.data.data;
+		const data = await tokenHelper.verifyToken(token, userAgent, appName, origin);
 		if (!data) throw new Error(ERROR.INVALID_TOKEN);
 
 		const isVerified = await verifyBotId(_.get(data, 'org._id'), botId);
@@ -50,29 +32,6 @@ async function authenticationUser(socket, next) {
 		return next();
 	} catch (error) {
 		return next(error);
-	}
-}
-
-function getTokenFromCookie(socket) {
-	const cookies = cookie.parse(_.get(socket, 'handshake.headers.cookie', ''));
-	if (!cookies) return;
-
-	const appName = _.get(socket, 'handshake.query.appName');
-	if (!appName) return;
-
-	const cookieName = getCookieNameByAppName(appName);
-	if (!cookieName) return;
-
-	return cookies[cookieName];
-}
-
-function getCookieNameByAppName(appName) {
-	switch (appName) {
-		case APP_NAME.Admin: return COOKIE_NAME.Admin;
-		case APP_NAME.VirtualAgent: return COOKIE_NAME.VirtualAgent;
-		case APP_NAME.VirtualQC: return COOKIE_NAME.VirtualQC;
-		case APP_NAME.LiveChat: return COOKIE_NAME.LiveChat;
-		case APP_NAME.Labelbox: return COOKIE_NAME.Labelbox;
 	}
 }
 

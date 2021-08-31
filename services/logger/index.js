@@ -7,7 +7,7 @@ const {
 
 exports.error = (err, req) => {
 	switch (env) {
-		case 'beta':
+		case 'test':
 		case 'staging':
 		case 'prod': {
 			let info;
@@ -28,7 +28,7 @@ exports.error = (err, req) => {
 
 exports.info = (msg) => {
 	switch (env) {
-		case 'beta':
+		case 'test':
 		case 'staging':
 		case 'prod': {
 			logSlack.info(msg);
