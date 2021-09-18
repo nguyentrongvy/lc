@@ -34,7 +34,8 @@ class BroadcastMessageController {
     try {
       const engineId = req.engine._id;
       const data = req.body;
-      const result = await broadcastMessageService.createBroadcastMessageCustomer(data, engineId);
+      const orgId = req.org._id;
+      const result = await broadcastMessageService.createBroadcastMessageCustomer(data, engineId, orgId);
       return ResponseSuccess(Constants.SUCCESS.BROADCAST_CUSTOMER_API, result, res);
     } catch (err) {
       next(err);
@@ -120,6 +121,20 @@ class BroadcastMessageController {
         recordsFiltered: totalData
       });
     } catch (error) {
+      next(error);
+    }
+  }
+
+  async updateBroadcastMessageCustomer(req, res, next) {
+    try {
+      const id = req.params.id;
+      const engineId = req.engine._id;
+      const orgId = req.org._id;
+      const data = req.body;
+      const result = await broadcastMessageService.updateBroadcastMessageCustomer({ id, data, engineId, orgId });
+      return ResponseSuccess('UPDATE_RESPONSE_SUCCESS', result, res);
+    } catch (error) {
+      logger.error(error);
       next(error);
     }
   }

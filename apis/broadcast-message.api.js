@@ -17,4 +17,12 @@ exports.load = (app) => {
     ],
     broadcastMessageController.createBroadcastMessages,
   );
+  app.put('/v1/messages/broadcast/:id',
+    [
+      validate(broadcastMessageValidation.paramId()),
+      validate(broadcastMessageValidation.broadcastMessage()),
+      authenMiddleware.verifyToken,
+    ],
+    broadcastMessageController.updateBroadcastMessageCustomer
+  )
 }

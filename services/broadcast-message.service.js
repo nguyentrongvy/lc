@@ -55,103 +55,42 @@ class BroadcastMessageService {
     await this.handleBroadcastMessage(message, engineId, orgId);
   }
 
-  async createBroadcastMessageCustomer(message, engineId) {
+  async createBroadcastMessageCustomer(message, engineId, orgId) {
     if (!message || !engineId) throw new Error(ERROR.DATA_ERROR);
     if (!message.responses && !message.content) throw new Error(ERROR.DATA_ERROR);
 
-    const message_type = _.get(message, 'message_type', Constants.BROADCAST_MESSAGE_TYPE.BROADCAST);
-    const tag = _.get(message, 'tag');
-    if (message_type != Constants.BROADCAST_MESSAGE_TYPE.BROADCAST
-      && !tag
-    ) {
-      throw new Error(ERROR_CODE.TAG_IS_REQUIRED);
-    }
+    let sentUsers;
+    let responses;
+    let tag;
+    ({ sentUsers, message, responses, tag } = await getInfoToBroadCastMessage({ message, engineId }));
 
-    const botUsersPromise = botUserService.getBotUserByEngineId(engineId, message.channel, message.lastActiveDate, message.gender);
-    const responsesPromise = broadcastResponseService.getResponseFromVaByNames(engineId, message.responses);
-    const botPromise = botService.getBotByEngineId(engineId);
-    const [botUsers, responses, bot] = await Promise.all([botUsersPromise, responsesPromise, botPromise]);
-    let botChannel = _.get(bot, `channels.${message.channel}`);
+    message.sentMessages = sentUsers && sentUsers.length || 0;
 
-    if (message.content) {
-      if (Array.isArray(message.content)) {
-        for (const text of message.content) {
-          responses.unshift({
-            text,
-            responseType: 'text',
-          });
-        }
-      }
-      if (typeof message.content === 'string') {
-        responses.unshift({
-          text: message.content,
-          responseType: 'text',
-        });
-      }
-    }
+    const broadCastMessage = await createBroadCast({ message, orgId, engineId });
 
-    if (message.channel === CHANNEL.FB) {
-      if (!message.pageId) {
-        throw new Error(ERROR_CODE.PAGE_ID_NOT_FOUND);
-      }
-      if (!botChannel.isActive) botChannel = _.get(bot, `channels.${CHANNEL.Messenger}`);
-    }
+    await handleMessage({ message, responses, engineId, sentUsers, tag });
+    return broadCastMessage;
+  }
 
-    if (!botChannel || !botChannel.isActive) {
-      throw new Error(ERROR_CODE.CHANNEL_NOT_ACTIVE);
-    }
+  async updateBroadcastMessageCustomer({ id, data, engineId, orgId }) {
+    const isDuplicated = await this.checkDuplicateMessageByName(data.name, engineId, orgId, id);
+    if (isDuplicated) throw new Error(ERROR_CODE.EXISTED_BROADCAST_MESSAGE);
 
-    if (!responses || responses.length == 0) {
-      throw new Error(ERROR_CODE.RESPONSE_NOT_FOUND);
+    const options = {
+      where: {
+        _id: id,
+        engineId,
+      },
+      data,
     };
 
-    if (!botUsers || botUsers.length == 0) {
-      throw new Error(ERROR_CODE.USER_NOT_FOUND);
-    }
+    let { sentUsers, message, responses, tag } = await getInfoToBroadCastMessage({ message: data, engineId });
 
-    let sentUsers = [...botUsers];
-    if (
-      message.channel == CHANNEL.FB
-      || message.channel == CHANNEL.ZALO
-    ) {
-      sentUsers = sentUsers.filter(u => {
-        const pageId = _.get(u, 'channel.pageId');
-        if (pageId != message.pageId) return false;
-        return true;
-      });
-    }
+    message.sentMessages = sentUsers && sentUsers.length || 0;
 
-    if (message.userId) {
-      sentUsers = sentUsers.filter(u => {
-        const userId = _.get(u, 'channel.userId');
-        if (userId != message.userId) return false;
-        return true;
-      });
-    }
+    await broadcastMessageRepository.getOneAndUpdate(options);
 
-    if (message.tags && message.tags.length > 0) {
-      sentUsers = sentUsers.filter(u => {
-        if (!u.tags || u.tags.length == 0) return false;
-
-        for (const tag of u.tags) {
-          if (!tag._id) continue;
-          const t = message.tags.find(t => t == tag.content.toString());
-          if (t) return true;
-        }
-        return false;
-      });
-    }
-    if (!sentUsers || sentUsers.length == 0) {
-      throw new Error(ERROR_CODE.USER_NOT_FOUND);
-    };
-
-    const messageType = {
-      message_type,
-      tag,
-    };
-    const promise = sentUsers.map(u => sendMessage({ u, responses, engineId, messageType }));
-    await Promise.all(promise);
-    return;
+    return await handleMessage({ message, responses, engineId, sentUsers, tag });
   }
 
   async getById(id, engineId, orgId) {
@@ -342,4 +281,106 @@ async function sendMessage({ u, responses, engineId, messageType }) {
     engineId,
     isProactiveMessage: true,
   });
+}
+
+async function createBroadCast({ message, orgId, engineId }) {
+  message.orgId = orgId;
+  message.engineId = engineId;
+  return broadcastMessageRepository.create(message);
+}
+
+async function getInfoToBroadCastMessage({ message, engineId }) {
+  const botUsersPromise = botUserService.getBotUserByEngineId(engineId, message.channel, message.lastActiveDate, message.gender);
+  const responsesPromise = broadcastResponseService.getResponseFromVaByNames(engineId, message.responses, message);
+  const botPromise = botService.getBotByEngineId(engineId);
+  const [botUsers, dataResponse, bot] = await Promise.all([botUsersPromise, responsesPromise, botPromise]);
+
+  if (!botUsers || botUsers.length == 0) {
+    throw new Error(ERROR_CODE.USER_NOT_FOUND);
+  }
+  const { responses, ids } = dataResponse;
+  message.responses = ids;
+
+  const tag = _.get(message, 'tag');
+  let botChannel = _.get(bot, `channels.${message.channel}`);
+  if (message.channel === CHANNEL.FB) {
+    if (!tag) {
+      throw new Error(ERROR_CODE.TAG_IS_REQUIRED);
+    }
+
+    if (!botChannel.isActive) {
+      botChannel = _.get(bot, `channels.${CHANNEL.Messenger}`);
+    }
+  }
+
+  if (!botChannel || !botChannel.isActive) {
+    throw new Error(ERROR_CODE.CHANNEL_NOT_ACTIVE);
+  }
+
+  if (!responses || responses.length == 0) {
+    throw new Error(ERROR_CODE.RESPONSE_NOT_FOUND);
+  };
+
+  const sentUsers = findUsers(botUsers, message);
+
+  return { sentUsers, message, responses, tag };
+}
+
+function findUsers(sentUsers, message) {
+  if (
+    message.channel === CHANNEL.FB
+    || message.channel === CHANNEL.ZALO
+  ) {
+    sentUsers = sentUsers.filter(u => {
+      const pageId = _.get(u, 'channel.pageId');
+      if (pageId != message.pageId) return false;
+      return true;
+    });
+  }
+
+  if (sentUsers.length === 0) {
+    throw new Error(ERROR_CODE.PAGE_ID_NOT_FOUND);
+  }
+
+  if (message.userId) {
+    sentUsers = sentUsers.filter(u => {
+      const userId = _.get(u, 'channel.userId');
+      if (userId != message.userId) return false;
+      return true;
+    });
+  }
+
+  if (!sentUsers || sentUsers.length == 0) {
+    throw new Error(ERROR_CODE.USER_NOT_FOUND_BY_PAGE_ID);
+  };
+
+  if (message.tags && message.tags.length > 0) {
+    sentUsers = sentUsers.filter(u => {
+      if (!u.tags || u.tags.length == 0) return false;
+
+      for (const tag of u.tags) {
+        if (!tag._id) continue;
+        const t = message.tags.find(t => t == tag._id.toString());
+        if (t) return true;
+      }
+      return false;
+    });
+  }
+
+  if (!sentUsers || sentUsers.length == 0) {
+    throw new Error(ERROR_CODE.USER_NOT_FOUND_BY_TAG);
+  };
+
+  return sentUsers;
+}
+
+async function handleMessage({ message, responses, engineId, sentUsers, tag }) {
+  const message_type = _.get(message, 'message_type', Constants.BROADCAST_MESSAGE_TYPE.BROADCAST);
+  const messageType = {
+    message_type,
+    tag,
+  };
+  const promise = sentUsers.map(u => sendMessage({ u, responses, engineId, messageType }));
+
+  return await Promise.all(promise);
 }

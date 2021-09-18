@@ -132,6 +132,8 @@ const constants = {
 		RESPONSE_NOT_FOUND: 1342,
 		USER_NOT_FOUND: 1343,
 		TAG_IS_REQUIRED: 1344,
+		USER_NOT_FOUND_BY_PAGE_ID: 1345,
+		USER_NOT_FOUND_BY_TAG: 1346,
 	},
 	GLOBAL_FIELDS: [
 		'name',
@@ -188,6 +190,10 @@ const constants = {
 		Test: 'test',
 		Stag: 'staging',
 		Prod: 'prod',
+	},
+	GENDER: {
+		Male: 'male',
+		Female: 'female',
 	},
 };
 

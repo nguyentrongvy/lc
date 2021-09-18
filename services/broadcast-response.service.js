@@ -1,7 +1,9 @@
 const axios = require('axios');
+const _ = require('lodash');
+const { ObjectId } = require('mongodb');
+
 const { broadcastResponseRepository } = require('../repositories');
 const { ERROR, ERROR_CODE, REDIS, CHANNEL, GLOBAL_FIELDS } = require('../common/constants');
-const _ = require('lodash');
 
 class BroadcastResponseService {
   async createBroadcastResponse(data, engineId, orgId) {
@@ -149,22 +151,58 @@ class BroadcastResponseService {
     return response;
   }
 
-  async getResponseFromVaByNames(engineId, names) {
+  async getResponseFromVaByNames(engineId, names, message) {
     if (!engineId
       || !names
       || names.length == 0
     ) {
       return [];
     }
-    const url = encodeURI(`${process.env.NLP_SERVER}/v1/responses/names?names=${names}`);
-    const res = await axios.get(url, {
-      headers: {
-        authorization: process.env.SERVER_API_KEY,
-        engineId,
-      },
-    });
 
-    return res && res.data && res.data.data;
+    const validId = checkValidIds(names);
+    let responses;
+    let ids;
+
+    if (validId) {
+      const options = {
+        where: {
+          engineId,
+          _id: { $in: names },
+        },
+      };
+
+      responses = await broadcastResponseRepository.getAll(options);
+      ids = names;
+    } else {
+      const options = {
+        where: {
+          engineId,
+          name: { $in: names },
+        },
+      };
+
+      responses = await broadcastResponseRepository.getAll(options);
+      ids = responses.map(({ _id }) => ({ _id }));
+    }
+
+    if (message.content) {
+      if (Array.isArray(message.content)) {
+        for (const text of message.content) {
+          responses.unshift({
+            text,
+            responseType: 'text',
+          });
+        }
+      }
+      if (typeof message.content === 'string') {
+        responses.unshift({
+          text: message.content,
+          responseType: 'text',
+        });
+      }
+    }
+
+    return { responses, ids };
   }
 }
 
@@ -227,4 +265,26 @@ function replaceGeneralParameter(redisInfo, allParameters, key, text) {
     logger.error(error);
     return text;
   }
+}
+
+function checkValidId(id) {
+  try {
+    return new ObjectId(id).toString() === id.toString();
+  } catch (error) {
+    return false;
+  }
+}
+
+function checkValidIds(ids) {
+  if (!ids || ids.length === 0) return false;
+
+  let validId;
+  for (const id of ids) {
+    validId = checkValidId(id);
+    if (!validId) {
+      return validId;
+    }
+  }
+
+  return validId;
 }

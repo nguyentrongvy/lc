@@ -23,6 +23,18 @@ const BroadcastMessageSchema = new mongoose.Schema({
   orgId: {
     type: mongoose.SchemaTypes.ObjectId,
   },
+  pageId: {
+    type: String,
+  },
+  userId: {
+    type: String,
+  },
+  lastActiveDate: {
+    type: String,
+  },
+  gender: {
+    type: String,
+  },
   isAsap: Boolean,
   name: String,
   sentMessages: Number,
