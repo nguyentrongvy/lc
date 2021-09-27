@@ -8,8 +8,8 @@ exports.broadcastMessage = () => ({
     responses: Joi.array().items(Joi.string()),
     userId: Joi.string().allow(''),
     tags: Joi.array().items(Joi.string()),
-    message_type: Joi.string().valid(...Object.values(Constants.BROADCAST_MESSAGE_TYPE)),
-    tag: Joi.string().valid(...Object.values(Constants.FACEBOOK_MESSAGE_TAG)),
+    message_type: Joi.string().valid(...Object.values(Constants.BROADCAST_MESSAGE_TYPE)).allow(''),
+    tag: Joi.string().valid(...Object.values(Constants.FACEBOOK_MESSAGE_TAG)).allow(''),
     lastActiveDate: Joi.string().required(),
   },
 });
