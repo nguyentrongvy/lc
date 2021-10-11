@@ -86,7 +86,9 @@ class BroadcastMessageService {
 
     let { sentUsers, message, responses, tag } = await getInfoToBroadCastMessage({ message: data, engineId });
 
-    message.sentMessages = sentUsers && sentUsers.length || 0;
+    if (message) {
+      message.sentMessages = sentUsers && sentUsers.length || 0;
+    }
 
     await broadcastMessageRepository.getOneAndUpdate(options);
 
@@ -294,6 +296,15 @@ async function getInfoToBroadCastMessage({ message, engineId }) {
   const responsesPromise = broadcastResponseService.getResponseFromVaByNames(engineId, message.responses, message);
   const botPromise = botService.getBotByEngineId(engineId);
   const [botUsers, dataResponse, bot] = await Promise.all([botUsersPromise, responsesPromise, botPromise]);
+
+  if ((!botUsers || botUsers.length == 0) && message.channel === CHANNEL.ZALO) {
+    return {
+      sentUsers: [],
+      message: '',
+      responses: [],
+      tag: '',
+    };
+  }
 
   if (!botUsers || botUsers.length == 0) {
     throw new Error(ERROR_CODE.USER_NOT_FOUND);
