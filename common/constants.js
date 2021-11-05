@@ -195,6 +195,9 @@ const constants = {
 		Male: 'male',
 		Female: 'female',
 	},
+	TIMEOUT: {
+		CREATE_JOB: 3000,
+	},
 };
 
 module.exports = Object.freeze(constants);

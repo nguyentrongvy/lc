@@ -1,3 +1,5 @@
+const axios = require('axios');
+
 const { broadcastMessageRepository } = require('../repositories');
 const { ERROR, ERROR_CODE, REDIS, CHANNEL } = require('../common/constants');
 const messageService = require('./message.service');
@@ -68,7 +70,34 @@ class BroadcastMessageService {
 
     const broadCastMessage = await createBroadCast({ message, orgId, engineId });
 
-    await handleMessage({ message, responses, engineId, sentUsers, tag });
+    if (message.scheduleTime) {
+      const request = {
+        url: `${process.env.LIVE_CHAT_SERVER}/v1/messages/broadcast/schedule`,
+        method: 'POST',
+        data: {
+          message,
+          responses,
+          engineId,
+          sentUsers,
+          tag,
+        },
+        headers: { authorization: process.env.SERVER_API_KEY },
+        timeout: Constants.TIMEOUT.CREATE_JOB,
+      };
+
+      const apiUrl = `${process.env.SCHEDULER_SERVER}/api/v1/schedule`;
+      await axios.post(apiUrl, {
+        request,
+        date: message.scheduleTime,
+        name: Constants.BROADCAST_MESSAGE_TYPE.BROADCAST,
+      }, {
+        headers: { authorization: process.env.SERVER_API_KEY },
+        timeout: Constants.TIMEOUT.CREATE_JOB,
+      });
+    } else {
+      await this.handleMessage({ message, responses, engineId, sentUsers, tag });
+    }
+
     return broadCastMessage;
   }
 
@@ -92,7 +121,18 @@ class BroadcastMessageService {
 
     await broadcastMessageRepository.getOneAndUpdate(options);
 
-    return await handleMessage({ message, responses, engineId, sentUsers, tag });
+    return await this.handleMessage({ message, responses, engineId, sentUsers, tag });
+  }
+
+  async handleMessage({ message, responses, engineId, sentUsers, tag }) {
+    const message_type = _.get(message, 'message_type', Constants.BROADCAST_MESSAGE_TYPE.BROADCAST);
+    const messageType = {
+      message_type,
+      tag,
+    };
+    const promise = sentUsers.map(u => sendMessage({ u, responses, engineId, messageType }));
+  
+    return await Promise.all(promise);
   }
 
   async getById(id, engineId, orgId) {
@@ -383,15 +423,4 @@ function findUsers(sentUsers, message) {
   };
 
   return sentUsers;
-}
-
-async function handleMessage({ message, responses, engineId, sentUsers, tag }) {
-  const message_type = _.get(message, 'message_type', Constants.BROADCAST_MESSAGE_TYPE.BROADCAST);
-  const messageType = {
-    message_type,
-    tag,
-  };
-  const promise = sentUsers.map(u => sendMessage({ u, responses, engineId, messageType }));
-
-  return await Promise.all(promise);
 }

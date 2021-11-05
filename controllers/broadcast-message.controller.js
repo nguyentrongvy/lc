@@ -138,6 +138,30 @@ class BroadcastMessageController {
       next(error);
     }
   }
+
+  async sendMessage(req, res) {
+    try {
+      const {
+        message,
+        responses,
+        engineId,
+        sentUsers,
+        tag,
+      } = req.body;
+
+      await broadcastMessageService.handleMessage({
+        message,
+        responses,
+        engineId,
+        sentUsers,
+        tag,
+      });
+      return ResponseSuccess('', '', res);
+    } catch (error) {
+      logger.error(error);
+      return ResponseError(error.message, res);
+    }
+  }
 }
 
 module.exports = new BroadcastMessageController();

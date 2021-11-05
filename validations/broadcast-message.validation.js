@@ -14,8 +14,18 @@ exports.broadcastMessage = () => ({
   },
 });
 
+exports.sendMessage = () => ({
+  body: {
+    responses: Joi.array().items(Joi.object()).required(),
+    tag: Joi.string().min(1, 'utf-8').max(100, 'utf-8').required(),
+    sentUsers: Joi.array().items(Joi.object()).required(),
+    engineId: Joi.string().regex(Constants.REGEX.OBJECT_ID).required(),
+    message: Joi.object().required(),
+  },
+});
+
 exports.paramId = () => ({
-	params: {
-		id: Joi.string().regex(Constants.REGEX.OBJECT_ID),
-	},
+  params: {
+    id: Joi.string().regex(Constants.REGEX.OBJECT_ID),
+  },
 });

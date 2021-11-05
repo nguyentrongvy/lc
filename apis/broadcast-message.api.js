@@ -17,6 +17,10 @@ exports.load = (app) => {
     ],
     broadcastMessageController.createBroadcastMessages,
   );
+  app.post('/v1/messages/broadcast/schedule', [
+    authenMiddleware.verifyToken,
+    validate(broadcastMessageValidation.sendMessage()),
+  ], broadcastMessageController.sendMessage);
   app.put('/v1/messages/broadcast/:id',
     [
       validate(broadcastMessageValidation.paramId()),
