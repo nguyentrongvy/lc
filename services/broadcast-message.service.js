@@ -61,6 +61,17 @@ class BroadcastMessageService {
     if (!message || !engineId) throw new Error(ERROR.DATA_ERROR);
     if (!message.responses && !message.content) throw new Error(ERROR.DATA_ERROR);
 
+    const broadcast = await broadcastMessageRepository.getOne({
+      where: {
+        engineId,
+        name: message.name,
+      },
+    });
+
+    if (broadcast) {
+      throw new Error(ERROR.EXISTED_BROADCAST_MESSAGE);
+    }
+
     let sentUsers;
     let responses;
     let tag;
@@ -86,10 +97,11 @@ class BroadcastMessageService {
       };
 
       const apiUrl = `${process.env.SCHEDULER_SERVER}/api/v1/schedule`;
+      const key = `${engineId}:${message.name}`;
       await axios.post(apiUrl, {
         request,
+        name: key,
         date: message.scheduleTime,
-        name: Constants.BROADCAST_MESSAGE_TYPE.BROADCAST,
       }, {
         headers: { authorization: process.env.SERVER_API_KEY },
         timeout: Constants.TIMEOUT.CREATE_JOB,
@@ -124,6 +136,27 @@ class BroadcastMessageService {
     return await this.handleMessage({ message, responses, engineId, sentUsers, tag });
   }
 
+  async stopBroadcast({ engineId, name, id }) {
+    await this.removeScheduleBroadcast(engineId, name);
+
+    return broadcastMessageRepository.updateOne({
+      where: {
+        _id: id,
+      },
+      data: {
+        isAsap: true,
+      },
+    });
+  }
+
+  async removeScheduleBroadcast(engineId, name) {
+    const key = `${engineId}:${name}`;
+    const apiUrl = `${process.env.SCHEDULER_SERVER}/api/v1/schedule?name=${key}`;
+    axios.delete(apiUrl, {
+      headers: { authorization: process.env.SERVER_API_KEY },
+    });
+  }
+
   async handleMessage({ message, responses, engineId, sentUsers, tag }) {
     const message_type = _.get(message, 'message_type', Constants.BROADCAST_MESSAGE_TYPE.BROADCAST);
     const messageType = {
@@ -131,7 +164,7 @@ class BroadcastMessageService {
       tag,
     };
     const promise = sentUsers.map(u => sendMessage({ u, responses, engineId, messageType }));
-  
+
     return await Promise.all(promise);
   }
 
@@ -151,6 +184,19 @@ class BroadcastMessageService {
 
   async deleteById(id, engineId, orgId) {
     if (!id || !engineId || !orgId) throw new Error(ERROR.DATA_ERROR);
+
+    const broadcast = await broadcastMessageRepository.getOne({
+      where: {
+        engineId,
+        _id: id,
+      },
+    });
+
+    if (!broadcast) {
+      throw new Error(ERROR.BROADCAST_NOT_FOUND);
+    }
+
+    await this.removeScheduleBroadcast(engineId, broadcast.name);
 
     return await broadcastMessageRepository.deleteOne({
       _id: id,

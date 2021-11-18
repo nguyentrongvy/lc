@@ -38,7 +38,7 @@ class BroadcastMessageController {
       const result = await broadcastMessageService.createBroadcastMessageCustomer(data, engineId, orgId);
       return ResponseSuccess(Constants.SUCCESS.BROADCAST_CUSTOMER_API, result, res);
     } catch (err) {
-      next(err);
+      return ResponseError(err.message, res);
     }
   }
 
@@ -156,6 +156,20 @@ class BroadcastMessageController {
         sentUsers,
         tag,
       });
+      return ResponseSuccess('', '', res);
+    } catch (error) {
+      logger.error(error);
+      return ResponseError(error.message, res);
+    }
+  }
+
+  async stopBroadcast(req, res) {
+    try {
+      const engineId = req.engine._id;
+      const id = req.params.id;
+      const name = req.body.name;
+      await broadcastMessageService.stopBroadcast({ engineId, name, id });
+
       return ResponseSuccess('', '', res);
     } catch (error) {
       logger.error(error);

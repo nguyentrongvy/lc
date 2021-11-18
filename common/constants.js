@@ -12,6 +12,8 @@ const constants = {
 		INVALID_TOKEN: 'INVALID_TOKEN',
 		DATA_ERROR: 'Data_error',
 		BOT_ID_IS_REQUIRED: 'botId is required',
+		EXISTED_BROADCAST_MESSAGE: 'EXISTED_BROADCAST_MESSAGE',
+		BROADCAST_NOT_FOUND: 'BROADCAST_NOT_FOUND',
 	},
 	SUCCESS: {
 		GET_LIST_USERS: 'Get list users successfully.',
