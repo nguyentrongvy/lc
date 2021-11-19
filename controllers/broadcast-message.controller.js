@@ -39,7 +39,7 @@ class BroadcastMessageController {
       const result = await broadcastMessageService.createBroadcastMessageCustomer(data, engineId, orgId, shoudAddParam);
       return ResponseSuccess(Constants.SUCCESS.BROADCAST_CUSTOMER_API, result, res);
     } catch (err) {
-      return ResponseError(err.message, res);
+      next(err);
     }
   }
 
