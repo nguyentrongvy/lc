@@ -69,7 +69,7 @@ class BroadcastMessageService {
     });
 
     if (broadcast) {
-      throw new Error(ERROR.EXISTED_BROADCAST_MESSAGE);
+      throw new Error(ERROR_CODE.EXISTED_BROADCAST_MESSAGE);
     }
 
     let sentUsers;
