@@ -35,7 +35,8 @@ class BroadcastMessageController {
       const engineId = req.engine._id;
       const data = req.body;
       const orgId = req.org._id;
-      const result = await broadcastMessageService.createBroadcastMessageCustomer(data, engineId, orgId);
+      const shoudAddParam = req.query.shoudAddParam;
+      const result = await broadcastMessageService.createBroadcastMessageCustomer(data, engineId, orgId, shoudAddParam);
       return ResponseSuccess(Constants.SUCCESS.BROADCAST_CUSTOMER_API, result, res);
     } catch (err) {
       return ResponseError(err.message, res);
@@ -157,6 +158,19 @@ class BroadcastMessageController {
         tag,
       });
       return ResponseSuccess('', '', res);
+    } catch (error) {
+      logger.error(error);
+      return ResponseError(error.message, res);
+    }
+  }
+
+  async getSentUsers(req, res) {
+    try {
+      const { lastActiveDate, channel, pageId, gender, tags } = req.query;
+      const engineId = req.engine._id;
+
+      const result = await broadcastMessageService.getSentUsers({ lastActiveDate, channel, pageId, gender, engineId, tags });
+      return ResponseSuccess('', result, res);
     } catch (error) {
       logger.error(error);
       return ResponseError(error.message, res);

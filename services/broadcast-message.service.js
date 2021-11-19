@@ -57,7 +57,7 @@ class BroadcastMessageService {
     await this.handleBroadcastMessage(message, engineId, orgId);
   }
 
-  async createBroadcastMessageCustomer(message, engineId, orgId) {
+  async createBroadcastMessageCustomer(message, engineId, orgId, shoudAddParam) {
     if (!message || !engineId) throw new Error(ERROR.DATA_ERROR);
     if (!message.responses && !message.content) throw new Error(ERROR.DATA_ERROR);
 
@@ -75,7 +75,7 @@ class BroadcastMessageService {
     let sentUsers;
     let responses;
     let tag;
-    ({ sentUsers, message, responses, tag } = await getInfoToBroadCastMessage({ message, engineId }));
+    ({ sentUsers, message, responses, tag } = await getInfoToBroadCastMessage({ message, engineId, shoudAddParam }));
 
     message.sentMessages = sentUsers && sentUsers.length || 0;
 
@@ -134,6 +134,27 @@ class BroadcastMessageService {
     await broadcastMessageRepository.getOneAndUpdate(options);
 
     return await this.handleMessage({ message, responses, engineId, sentUsers, tag });
+  }
+
+  async getSentUsers({ lastActiveDate, channel, pageId, gender, engineId, tags }) {
+    let botUsers = await botUserService.getBotUserByEngineId(engineId, channel, lastActiveDate, gender, pageId);
+    botUsers = getBotUsersByLastActiveDate(lastActiveDate, botUsers);
+    botUsers = getBotUsersByGender(botUsers, gender, channel);
+
+    if (tags && tags.length > 0) {
+      botUsers = botUsers.filter(u => {
+        if (!u.tags || u.tags.length == 0) return false;
+
+        for (const tag of u.tags) {
+          if (!tag._id) continue;
+          const t = tags.find(t => t == tag._id.toString());
+          if (t) return true;
+        }
+        return false;
+      });
+    }
+
+    return botUsers;
   }
 
   async stopBroadcast({ engineId, name, id }) {
@@ -377,11 +398,11 @@ async function createBroadCast({ message, orgId, engineId }) {
   return broadcastMessageRepository.create(message);
 }
 
-async function getInfoToBroadCastMessage({ message, engineId }) {
-  const botUsersPromise = botUserService.getBotUserByEngineId(engineId, message.channel, message.lastActiveDate, message.gender);
+async function getInfoToBroadCastMessage({ message, engineId, shoudAddParam }) {
+  const botUsersPromise = botUserService.getBotUserByEngineId(engineId, message.channel, message.lastActiveDate, message.gender, message.pageId, shoudAddParam);
   const responsesPromise = broadcastResponseService.getResponseFromVaByNames(engineId, message.responses, message);
   const botPromise = botService.getBotByEngineId(engineId);
-  const [botUsers, dataResponse, bot] = await Promise.all([botUsersPromise, responsesPromise, botPromise]);
+  let [botUsers, dataResponse, bot] = await Promise.all([botUsersPromise, responsesPromise, botPromise]);
 
   if ((!botUsers || botUsers.length == 0) && message.channel === CHANNEL.ZALO) {
     return {
@@ -393,8 +414,19 @@ async function getInfoToBroadCastMessage({ message, engineId }) {
   }
 
   if (!botUsers || botUsers.length == 0) {
-    throw new Error(ERROR_CODE.USER_NOT_FOUND);
+    throw new Error(ERROR_CODE.USER_NOT_FOUND_BY_CHANNEL);
   }
+
+  botUsers = getBotUsersByLastActiveDate(message.lastActiveDate, botUsers);
+  if (botUsers.length === 0) {
+    throw new Error(ERROR_CODE.USER_NOT_FOUND_BY_LAST_ACTIVE_DATE);
+  }
+
+  botUsers = getBotUsersByGender(botUsers, message.gender, message.channel);
+  if (botUsers.length === 0) {
+    throw new Error(ERROR_CODE.USER_NOT_FOUND_BY_GENDER);
+  }
+
   const { responses, ids } = dataResponse;
   message.responses = ids;
 
@@ -469,4 +501,20 @@ function findUsers(sentUsers, message) {
   };
 
   return sentUsers;
+}
+
+function getBotUsersByLastActiveDate(lastActiveDate, botUsers) {
+  if (!lastActiveDate) return botUsers;
+
+  return botUsers.filter(user => {
+    return new Date(user.lastActiveTime) <= new Date(lastActiveDate);
+  });
+}
+
+function getBotUsersByGender(botUsers, gender, channel) {
+  if (!gender || channel === CHANNEL.ZALO) return botUsers;
+
+  return botUsers.filter(user => {
+    return (user.gender === gender);
+  });
 }

@@ -29,3 +29,12 @@ exports.paramId = () => ({
     id: Joi.string().regex(Constants.REGEX.OBJECT_ID),
   },
 });
+
+exports.getUsers = () => ({
+  query: {
+    lastActiveDate: Joi.string().allow(''),
+    channel: Joi.string().valid(...Object.values(Constants.CHANNEL)).required(),
+    pageId: Joi.string().required(),
+    gender: Joi.string().allow(''),
+  },
+});

@@ -29,6 +29,10 @@ exports.load = (app) => {
     ],
     broadcastMessageController.updateBroadcastMessageCustomer
   )
+  app.get('/v1/messages/broadcast/users', [
+    validate(broadcastMessageValidation.getUsers()),
+    authenMiddleware.verifyToken,
+  ], broadcastMessageController.getSentUsers);
   app.put('/v1/messages/broadcast/:id/stop', [
     validate(broadcastMessageValidation.paramId()),
     authenMiddleware.verifyToken,
