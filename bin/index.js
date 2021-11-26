@@ -26,11 +26,11 @@ const cleanup = (app) => () => {
 };
 
 process.on('uncaughtException', (err) => {
-	logger.error('Unhandled Exception', err);
+	logger.error(err);
 });
 
 process.on('uncaughtRejection', (err) => {
-	logger.error('Unhandled Rejection', err);
+	logger.error(err);
 });
 
 models.connectDB(dbSettings)

@@ -12,7 +12,7 @@ exports.error = (err, req) => {
 		case 'prod': {
 			let info;
 			if (req) {
-				info = `${req.ip} ENGINE-${req.headers.engineid || '-'} ${req.method} ${req.originalUrl}`;
+				info = `${req.ip} ENGINE-${req.headers && req.headers.engineid || '-'} ${req.method} ${req.originalUrl}`;
 			}
 			err.message = `${info || ''} ${err.message}`;
 			logSlack.error(err);
