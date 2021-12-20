@@ -5,8 +5,8 @@ function initTracer(serviceName) {
     const config = {
         serviceName,
         sampler: {
-            type: 'const',
-            param: 1,
+            type: 'probabilistic',
+            param: process.env.TRACING_SAMPLE_RATE || 1,
         },
     };
 

@@ -12,9 +12,19 @@ exports.error = (err, req) => {
 		case 'prod': {
 			let info;
 			if (req) {
-				info = `${req.ip} ENGINE-${req.headers && req.headers.engineid || '-'} ${req.method} ${req.originalUrl}`;
+				info = {
+					engineId: req.headers && req.headers.engineId,
+					method: req.method,
+					url: req.originalUrl,
+				};
 			}
-			err.message = `${info || ''} ${err.message}`;
+			if (err instanceof Error) {
+				err.message = {
+					...info,
+					error: err.message,
+					stack: JSON.stringify(err.stack),
+				};
+			}
 			logSlack.error(err);
 			logWinstonError.error(err);
 			return;
@@ -28,6 +38,7 @@ exports.error = (err, req) => {
 
 exports.info = (msg) => {
 	switch (env) {
+		case 'dev':
 		case 'test':
 		case 'staging':
 		case 'prod': {
@@ -36,7 +47,7 @@ exports.info = (msg) => {
 			return;
 		}
 		default: {
-			console.log(msg);
+			console.log(JSON.stringify(msg, null, 0));
 			return;
 		}
 	}
