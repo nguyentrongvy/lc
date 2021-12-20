@@ -98,7 +98,13 @@ const formatMessage = log => {
     return JSON.stringify(data, null, 0);
 };
 
-if (process.env.LOGGING_EXTERNAL == 'cloudwatch' && process.env.ENV == 'prod') {
+if (
+    process.env.LOGGING_EXTERNAL == 'cloudwatch'
+    && (
+        process.env.ENV == 'prod'
+        || process.env.ENV == 'staging'
+    )
+) {
     loggerCommon.add(new WinstonCloudWatch({
         name: 'common-stream',
         cloudWatchLogs: awsHelper.getCloudWatch(),
