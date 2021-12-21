@@ -10,7 +10,7 @@ exports.error = (err, req) => {
 		case 'test':
 		case 'staging':
 		case 'prod': {
-			let info;
+			let info = {};
 			if (req) {
 				info = {
 					engineId: req.headers && req.headers.engineId,
