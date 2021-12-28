@@ -46,6 +46,7 @@ const constants = {
 	CHANNEL: {
 		WEB: 'web',
 		FB: 'facebook',
+		Instagram: 'instagram',
 		ZALO: 'zalo',
 		Freshchat: 'freshchat',
 		Glia: 'glia',
