@@ -16,9 +16,11 @@ const tracingMiddleware = require('./middlewares/tracing.middleware');
 module.exports = () => {
 	const app = express();
 
+
 	app.use(helmet());
 	app.use(compression());
 	app.use(cors({ origin: getCorsOrigins(), credentials: true }));
+	app.get('/health-check', (_, res) => res.json({ success: true }));
 
 	app.use(bodyParser.urlencoded({ extended: false }));
 	app.use(bodyParser.json({ type: 'application/json' }));
@@ -35,8 +37,6 @@ module.exports = () => {
 
 	// load static file
 	app.use(express.static('public'));
-
-	app.get('/health-check', (req, res) => res.json({ success: true }));
 
 	// load APIs
 	apis.load(app);

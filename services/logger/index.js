@@ -11,6 +11,7 @@ exports.error = (err, req) => {
 		case 'staging':
 		case 'prod': {
 			let info = {};
+			let error = Object.assign({}, err);
 			if (req) {
 				info = {
 					engineId: req.headers && req.headers.engineId,
@@ -19,14 +20,14 @@ exports.error = (err, req) => {
 				};
 			}
 			if (err instanceof Error) {
-				err.message = {
+				error.message = {
 					...info,
 					error: err.message,
 					stack: JSON.stringify(err.stack),
 				};
 			}
-			logSlack.error(err);
-			logWinstonError.error(err);
+			logSlack.error(error);
+			logWinstonError.error(error);
 			return;
 		}
 		default: {
