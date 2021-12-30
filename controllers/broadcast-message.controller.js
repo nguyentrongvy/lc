@@ -3,6 +3,7 @@ const { ResponseSuccess, ResponseError } = require('../helpers/response.helper')
 const { broadcastMessageRepository } = require('../repositories/index');
 const logger = require('../services/logger');
 const Constants = require('../common/constants');
+const { specialRegex } = require('../helpers/regex.helper');
 
 class BroadcastMessageController {
   async getById(req, res, next) {
@@ -90,7 +91,7 @@ class BroadcastMessageController {
       if (search) {
         condition.$and.push(
           {
-            name: new RegExp(search, 'i')
+            name: specialRegex(search),
           },
         );
       }
