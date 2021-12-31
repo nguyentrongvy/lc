@@ -10,6 +10,7 @@ exports.error = (err, req) => {
 		case 'test':
 		case 'staging':
 		case 'prod': {
+			logSlack.error(err);
 			let info = {};
 			let error = Object.assign({}, err);
 			if (req) {
@@ -26,7 +27,6 @@ exports.error = (err, req) => {
 					stack: JSON.stringify(err.stack),
 				};
 			}
-			logSlack.error(error);
 			logWinstonError.error(error);
 			return;
 		}
