@@ -1,5 +1,6 @@
 const Queue = require('bull');
-const roomTimerQueue = new Queue('room-timer', process.env.REDIS_HOST);
+const { QUEUE_REDIS_OPTIONS } = require('../../common/redis-options');
+const roomTimerQueue = new Queue('room-timer', QUEUE_REDIS_OPTIONS);
 const logger = require('../../services/logger');
 
 roomTimerQueue.on('completed', (job, result) => {
