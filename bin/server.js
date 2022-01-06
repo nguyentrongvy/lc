@@ -3,6 +3,7 @@ const socketio = require('socket.io');
 const redisAdapter = require('socket.io-redis');
 const appExpress = require('../app');
 const idleRoomConsumer = require('../jobs/room/idle-room-consumer');
+const { setupQueue } = require('../message-queue');
 const { REDIS_OPTIONS } = require('../common/redis-options');
 
 exports.start = (serverSettings) => new Promise((resolve) => {
@@ -18,4 +19,5 @@ exports.start = (serverSettings) => new Promise((resolve) => {
 	server.listen(port, () => resolve(server));
 
 	idleRoomConsumer.addProcessJobs();
+	setupQueue();
 });

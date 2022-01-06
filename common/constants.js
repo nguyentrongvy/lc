@@ -204,6 +204,8 @@ const constants = {
 	TIMEOUT: {
 		CREATE_JOB: 3000,
 	},
+	LIMIT_RECORDS: 100,
+	DEFAULT_TIMEOUT: 3000,
 };
 
 module.exports = Object.freeze(constants);

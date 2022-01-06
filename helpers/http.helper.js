@@ -1,8 +1,10 @@
 const axios = require('axios');
 
+const Constants = require('../common/constants');
+
 class HttpHelper {
-    static async get(url, headers) {
-        const res = await send(url, 'GET', headers);
+    static async get(url, headers, options) {
+        const res = await send(url, 'GET', headers, '', options);
         return res;
     }
 
@@ -29,16 +31,17 @@ class HttpHelper {
 
 module.exports = HttpHelper;
 
-async function send(url, method, headers, body) {
+async function send(url, method, headers, body, options) {
     headers = initAuthorizationHeaders(headers);
-    const options = {
+    const newOptions = {
         url,
         method,
         headers,
         data: body,
+        timeout: (options && options.timeout) || Constants.DEFAULT_TIMEOUT,
     };
 
-    const res = await axios(options);
+    const res = await axios(newOptions);
 
     return res && res.data;
 }

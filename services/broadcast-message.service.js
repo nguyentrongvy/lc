@@ -10,9 +10,10 @@ const roomService = require('./room.service');
 const logger = require('./logger/index');
 const botService = require('./bot.service');
 const _ = require('lodash');
-const { setExToRedis, delFromRedis } = require('./redis.service');
+const { delFromRedis } = require('./redis.service');
 const scheduleService = require('./schedule.service');
-const Constants = require('../common/constants');
+const { processingScheduleTime } = require('./helpers');
+const { getUsersQueue } = require('../message-queue/initQueue');
 
 class BroadcastMessageService {
   async updateBroadcastMessage(id, data, engineId, orgId, isModified) {
@@ -80,35 +81,7 @@ class BroadcastMessageService {
     message.sentMessages = sentUsers && sentUsers.length || 0;
 
     const broadCastMessage = await createBroadCast({ message, orgId, engineId });
-
-    if (message.scheduleTime) {
-      const request = {
-        url: `${process.env.LIVE_CHAT_SERVER}/v1/messages/broadcast/schedule`,
-        method: 'POST',
-        data: {
-          message,
-          responses,
-          engineId,
-          sentUsers,
-          tag,
-        },
-        headers: { authorization: process.env.SERVER_API_KEY },
-        timeout: Constants.TIMEOUT.CREATE_JOB,
-      };
-
-      const apiUrl = `${process.env.SCHEDULER_SERVER}/api/v1/schedule`;
-      const key = `${engineId}:${message.name}`;
-      await axios.post(apiUrl, {
-        request,
-        name: key,
-        date: message.scheduleTime,
-      }, {
-        headers: { authorization: process.env.SERVER_API_KEY },
-        timeout: Constants.TIMEOUT.CREATE_JOB,
-      });
-    } else {
-      await this.handleMessage({ message, responses, engineId, sentUsers, tag });
-    }
+    await processingScheduleTime({ message, responses, engineId, sentUsers, tag });
 
     return broadCastMessage;
   }
@@ -179,14 +152,7 @@ class BroadcastMessageService {
   }
 
   async handleMessage({ message, responses, engineId, sentUsers, tag }) {
-    const message_type = _.get(message, 'message_type', Constants.BROADCAST_MESSAGE_TYPE.BROADCAST);
-    const messageType = {
-      message_type,
-      tag,
-    };
-    const promise = sentUsers.map(u => sendMessage({ u, responses, engineId, messageType }));
-
-    return await Promise.all(promise);
+    getUsersQueue.provide({ message, responses, engineId, sentUsers, tag });
   }
 
   async getById(id, engineId, orgId) {
