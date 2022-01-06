@@ -1,6 +1,8 @@
 const _ = require('lodash');
+const redis = require('redis');
 const { REDIS_OPTIONS } = require('../common/redis-options');
-const socketEmitter = require('socket.io-emitter')(REDIS_OPTIONS);
+const client = redis.createClient(REDIS_OPTIONS);
+const socketEmitter = require('socket.io-emitter')(client);
 const Constants = require('../common/constants');
 
 exports.sendMessage = ({
