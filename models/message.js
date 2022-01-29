@@ -30,6 +30,13 @@ const messageSchema = new mongoose.Schema({
 		max: 5000,
 		required: true,
 	},
+	userInfo: {
+		type: mongoose.SchemaTypes.Mixed,
+	},
+	isSessionBegin: {
+		type: Boolean,
+		default: false,
+	},
 	action: {
 		type: String,
 		enum: Object.values(Constants.ACTION),

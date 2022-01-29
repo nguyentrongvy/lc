@@ -23,6 +23,8 @@ class MessageController {
 				triggers,
 				platform,
 				isInactivePeriod,
+				isSessionBegin,
+				userInfo
 			} = req.body;
 
 			const orgId = req.org._id;
@@ -56,6 +58,8 @@ class MessageController {
 				orgId,
 				pageId,
 				platform,
+				isSessionBegin,
+				userInfo,
 			});
 
 			await messageService.emitMessages({
