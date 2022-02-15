@@ -206,6 +206,9 @@ const constants = {
 	},
 	LIMIT_RECORDS: 100,
 	DEFAULT_TIMEOUT: 3000,
+	TYPE: {
+		String: 'string',
+	},
 };
 
 module.exports = Object.freeze(constants);

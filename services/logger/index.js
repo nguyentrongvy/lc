@@ -4,6 +4,7 @@ const {
 	loggerErrorConsole: logWinstonError,
 	loggerCommon: logWinstonInfo,
 } = require('./winston.service');
+const Constants = require('../../common/constants');
 
 exports.error = (err, req) => {
 	switch (env) {
@@ -12,7 +13,12 @@ exports.error = (err, req) => {
 		case 'prod': {
 			logSlack.error(err);
 			let info = {};
-			let error = Object.assign({}, err);
+			let error;
+			if (typeof err === Constants.TYPE.String) {
+				error = err;
+			} else {
+				error = Object.assign({}, err);
+			}
 			if (req) {
 				info = {
 					engineId: req.headers && req.headers.engineId,
