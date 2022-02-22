@@ -8,6 +8,7 @@ class MessageController {
 	async sendMessage(req, res, next) {
 		try {
 			const {
+				service,
 				botUser,
 				content,
 				channel,
@@ -63,6 +64,7 @@ class MessageController {
 			});
 
 			await messageService.emitMessages({
+				service,
 				botUser,
 				intents,
 				entities,
@@ -88,6 +90,7 @@ class MessageController {
 				if (isBotOffline || isUnassignedRoom || isUnassignedMasterRoom) {
 					setImmediate(() => {
 						messageService.sendMessagesAuto({
+							service,
 							botUser,
 							triggers,
 							dataChat,

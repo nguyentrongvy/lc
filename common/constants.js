@@ -209,6 +209,9 @@ const constants = {
 	TYPE: {
 		String: 'string',
 	},
+	SERVICES: {
+		VOICE_CONTEXT: 'voice_context',
+	}
 };
 
 module.exports = Object.freeze(constants);

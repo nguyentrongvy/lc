@@ -179,6 +179,7 @@ class MessageService {
 	}
 
 	async emitMessages({
+		service,
 		botUser,
 		dataChat,
 		intents,
@@ -206,7 +207,7 @@ class MessageService {
 					&& 'responses' in suggestions
 					&& !!botUser
 				) {
-					await this.sendMessageAuto({ suggestions, roomId, engineId });
+					await this.sendMessageAuto({ suggestions, roomId, engineId, service });
 				}
 			}
 		}
@@ -263,6 +264,7 @@ class MessageService {
 		isProactiveMessage,
 		actor,
 		messageType,
+		service,
 	}) {
 		const userId = _.get(room, 'botUser._id', '').toString();
 		const engineId = _.get(room, 'engineId', '').toString();
@@ -300,7 +302,12 @@ class MessageService {
 				}
 			}
 		}
-		const url = `${process.env.NLP_SERVER}/api/v1/agents/messages`;
+		let url = `${process.env.NLP_SERVER}/api/v1/agents/messages`;
+
+		if (service === Constants.SERVICES.VOICE_CONTEXT) {
+			url = `${process.env.VOICE_CONTEXT}/api/v2/agents/messages`;
+		}
+
 		await axios.post(url, {
 			text,
 			userId,
@@ -373,7 +380,7 @@ class MessageService {
 		return scheduleService.deleteJob(key);
 	}
 
-	async sendMessageAuto({ suggestions, roomId, engineId, isProactiveMessage, triggers, botUser }) {
+	async sendMessageAuto({ suggestions, roomId, engineId, isProactiveMessage, triggers, botUser, service }) {
 		const responses = _.get(suggestions, 'responses', []);
 		const masterBot = _.get(suggestions, 'masterBot');
 		const pageId = _.get(suggestions, 'pageId');
@@ -395,6 +402,7 @@ class MessageService {
 				await this.sendUserInfoToLiveChat({ triggers, engineId, botUser });
 			}
 			await this.sendToBot({
+				service,
 				room,
 				pageId,
 				responses: content,
@@ -518,6 +526,7 @@ class MessageService {
 	}
 
 	async sendMessagesAuto({
+		service,
 		botUser,
 		triggers,
 		dataChat,
@@ -533,6 +542,7 @@ class MessageService {
 			const engineId = room.engineId.toString();
 			const roomId = room._id.toString();
 			await this.sendMessageAuto({
+				service,
 				botUser,
 				triggers,
 				roomId,
