@@ -46,6 +46,7 @@ const constants = {
 	CHANNEL: {
 		WEB: 'web',
 		FB: 'facebook',
+		MicrosoftTeams: 'microsoft_teams',
 		Instagram: 'instagram',
 		ZALO: 'zalo',
 		Freshchat: 'freshchat',
