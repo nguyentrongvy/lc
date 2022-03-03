@@ -100,6 +100,7 @@ class MessageController {
 							nlpIntentsOriginal,
 							allParameters,
 							responses: botResponses,
+							spanParent: req.span,
 						});
 					});
 				}

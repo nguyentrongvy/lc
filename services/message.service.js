@@ -24,6 +24,8 @@ const {
 } = require('../services/socket-emitter.service');
 const dateTimeHelper = require('../helpers/date-time.helper');
 const scheduleService = require('./schedule.service');
+const httpHelper = require('../helpers/http.helper');
+const tracer = require('../helpers/tracing.helper').getGlobalTracer();
 
 class MessageService {
 	create({ botUser, engineId, room, content, channel, action, agent }) {
@@ -265,7 +267,11 @@ class MessageService {
 		actor,
 		messageType,
 		service,
+		spanParent,
 	}) {
+		const span = tracer.startSpan('send-data-to-nlp', {
+			childOf: spanParent,
+		});
 		const userId = _.get(room, 'botUser._id', '').toString();
 		const engineId = _.get(room, 'engineId', '').toString();
 		const roomId = room._id.toString();
@@ -308,7 +314,7 @@ class MessageService {
 			url = `${process.env.VOICE_CONTEXT}/api/v2/agents/messages`;
 		}
 
-		await axios.post(url, {
+		await httpHelper.post(url, {
 			text,
 			userId,
 			channel,
@@ -329,6 +335,11 @@ class MessageService {
 				authorization: process.env.SERVER_API_KEY,
 				engineid: engineId,
 			},
+		}, { span }).finally(() => {
+			span.finish();
+			if (spanParent) {
+				spanParent.finish();
+			}
 		});
 	}
 
@@ -380,7 +391,7 @@ class MessageService {
 		return scheduleService.deleteJob(key);
 	}
 
-	async sendMessageAuto({ suggestions, roomId, engineId, isProactiveMessage, triggers, botUser, service }) {
+	async sendMessageAuto({ suggestions, roomId, engineId, isProactiveMessage, triggers, botUser, service, spanParent }) {
 		const responses = _.get(suggestions, 'responses', []);
 		const masterBot = _.get(suggestions, 'masterBot');
 		const pageId = _.get(suggestions, 'pageId');
@@ -405,10 +416,11 @@ class MessageService {
 				service,
 				room,
 				pageId,
+				messageType,
+				spanParent,
 				responses: content,
 				botUser: botUserId,
 				isProactiveMessage,
-				messageType,
 			});
 
 			if (masterBot && masterBot !== engineId) {
@@ -536,6 +548,7 @@ class MessageService {
 		pageId,
 		nlpIntentsOriginal,
 		allParameters,
+		spanParent,
 	}) {
 		for (let index = 0; index < listBot.length; index++) {
 			const { room } = dataChat.find(({ room }) => listBot[index] === room.engineId.toString());
@@ -547,6 +560,7 @@ class MessageService {
 				triggers,
 				roomId,
 				engineId,
+				spanParent,
 				suggestions: {
 					masterBot,
 					pageId,
