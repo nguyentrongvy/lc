@@ -65,7 +65,7 @@ class MessageService {
 		const messages = await messageRepository.getMany({
 			where: condition,
 			sort: sortCondition,
-			fields: 'botUser agent content createdAt action isSessionBegin userInfo',
+			fields: 'botUser agent content createdAt action isSessionBegin userInfo fullAudio',
 		});
 
 		return messages;
@@ -493,7 +493,8 @@ class MessageService {
 		pageId,
 		platform,
 		isSessionBegin,
-		userInfo
+		userInfo,
+		fullAudio,
 	}) {
 		let dataRooms = await getRooms({
 			botUser,
@@ -516,6 +517,7 @@ class MessageService {
 			rooms: dataRooms,
 			isSessionBegin,
 			userInfo,
+			fullAudio,
 		});
 
 		dataRooms = await updateUnreadAndLastMsg({
@@ -885,7 +887,8 @@ async function createNewMessages({
 	content,
 	rooms,
 	isSessionBegin,
-	userInfo
+	userInfo,
+	fullAudio,
 }) {
 	if (!content || (Array.isArray(content) && content.length === 0)) {
 		return [];
@@ -901,6 +904,7 @@ async function createNewMessages({
 				engineId: room.engineId,
 				isSessionBegin,
 				userInfo,
+				fullAudio,
 			})
 		);
 	}

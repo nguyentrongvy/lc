@@ -25,7 +25,8 @@ class MessageController {
 				platform,
 				isInactivePeriod,
 				isSessionBegin,
-				userInfo
+				userInfo,
+				fullAudio,
 			} = req.body;
 
 			const orgId = req.org._id;
@@ -61,6 +62,7 @@ class MessageController {
 				platform,
 				isSessionBegin,
 				userInfo,
+				fullAudio,
 			});
 
 			await messageService.emitMessages({

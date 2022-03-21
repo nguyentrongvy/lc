@@ -37,6 +37,7 @@ const messageSchema = new mongoose.Schema({
 		type: Boolean,
 		default: false,
 	},
+	fullAudio: String,
 	action: {
 		type: String,
 		enum: Object.values(Constants.ACTION),
