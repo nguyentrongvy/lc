@@ -16,6 +16,9 @@ function getQueueRedisOptions() {
 
     return {
         redis: getRedisOptions(),
+        settings: {
+            stalledInterval: 600000,
+        },
     };
 }
 

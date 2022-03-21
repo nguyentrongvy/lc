@@ -1,6 +1,7 @@
 const Queue = require('bull');
 
 const logger = require('../services/logger');
+const { QUEUE_REDIS_OPTIONS } = require('../common/redis-options');
 
 const BACK_OFF = {
     type: "exponential",
@@ -8,10 +9,19 @@ const BACK_OFF = {
 };
 
 class MyQueue {
-    constructor(name, concurrency, redisHost = process.env.REDIS_HOST) {
+    constructor(name, concurrency, redisOption = QUEUE_REDIS_OPTIONS) {
         this.name = name;
         this.concurrency = concurrency;
-        this.queue = new Queue(this.name, redisHost);
+        if (typeof redisOption === 'string') {
+            this.queue = new Queue(this.name, redisOption, {
+                settings: {
+                    stalledInterval: 600000,
+                },
+            });
+        } else {
+            this.queue = new Queue(this.name, redisOption);
+        }
+
         this.initEvent();
     }
 
