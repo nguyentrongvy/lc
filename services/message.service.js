@@ -331,10 +331,8 @@ class MessageService {
 			responses: validResponses,
 			messageType,
 		}, {
-			headers: {
-				authorization: process.env.SERVER_API_KEY,
-				engineid: engineId,
-			},
+			authorization: process.env.SERVER_API_KEY,
+			engineid: engineId,
 		}, { span }).finally(() => {
 			span.finish();
 			if (spanParent) {
