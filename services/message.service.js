@@ -4,6 +4,7 @@ const _ = require('lodash');
 const {
 	messageRepository,
 	roomRepository,
+	tagRepository,
 } = require('../repositories');
 const Constants = require('../common/constants');
 const {
@@ -960,22 +961,54 @@ async function updateRooms(rooms, botUser) {
 		const tags = [];
 		if (!botUser.tags) continue;
 		for (const tag of botUser.tags) {
-			const exist = room.tags.some(t => t.content === tag.content);
-			if (!exist) {
-				tags.push(tag);
+			if (_.isString(tag)) {
+				const exist = room.tags.some(t => t.content === tag);
+				if (!exist) {
+					const newTag = await tagRepository.create({
+						content: tag,
+						engineId: room.engineId,
+					});
+
+					tags.push({
+						_id: newTag._id,
+						content: tag,
+					});
+				}
+			} else {
+				const exist = room.tags.some(t => t.content === tag.content);
+				if (!exist) {
+					tags.push(tag);
+				}
 			}
 		}
-		if (tags.length === 0) continue;
 
-		promises.push(roomRepository.updateOne({
-			where: {
-				_id: room._id,
-			},
-			data: {
-				$push: { tags },
-				note: botUser.note || room.note,
-			},
-		}));
+		if (tags.length > 0) {
+			promises.push(roomRepository.updateOne({
+				where: {
+					_id: room._id,
+				},
+				data: {
+					$push: { tags },
+					note: botUser.note || room.note,
+				},
+			}));
+		}
+
+		if (botUser.tagsRemoved.length > 0) {
+			for (const tag of botUser.tagsRemoved) {
+				const exist = room.tags.find(t => t.content === tag);
+				if (exist) {
+					promises.push(roomRepository.updateOne({
+						where: {
+							_id: room._id,
+						},
+						data: {
+							$pull: { tags: { _id: exist._id } },
+						},
+					}));
+				}
+			}
+		}
 	}
 
 	if (promises.length === 0) return;
